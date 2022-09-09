@@ -1,0 +1,28 @@
+[
+    {
+        "ShadowAttribute": {
+            "id": "2",
+            "old_id": "1",
+            "event_id": "1",
+            "type": "hostname",
+            "category": "Network activity",
+            "uuid": "856a3eed-aa55-4c73-bd1c-1ceadca5ca76",
+            "to_ids": true,
+            "comment": "",
+            "org_id": "1",
+            "distribution": "0",
+            "timestamp": "1662472028",
+            "first_seen": null,
+            "last_seen": null,
+            "value": "example.com",
+            "org_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "old_uuid": "856a3eed-aa55-4c73-bd1c-1ceadca5ca76",
+            "event_uuid": "385283a1-b5e0-4e10-a532-dce11c365a56",
+            "Org": {
+                "name": "HOST",
+                "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+                "id": "1"
+            }
+        }
+    }
+]

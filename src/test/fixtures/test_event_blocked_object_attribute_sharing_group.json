@@ -1,0 +1,105 @@
+{
+    "Event": {
+        "id": "1",
+        "orgc_id": "1",
+        "org_id": "1",
+        "date": "2022-08-31",
+        "threat_level_id": "1",
+        "info": "blocked object attribute sharing group",
+        "published": false,
+        "uuid": "385283a1-b5e0-4e10-a532-dce11c365a56",
+        "attribute_count": "4",
+        "analysis": "0",
+        "timestamp": "1661956788",
+        "distribution": "2",
+        "proposal_email_lock": false,
+        "locked": false,
+        "publish_timestamp": "1661956380",
+        "sharing_group_id": "0",
+        "disable_correlation": false,
+        "extends_uuid": "",
+        "protected": null,
+        "event_creator_email": "admin@admin.test",
+        "Org": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "Orgc": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "Attribute": [],
+        "ShadowAttribute": [],
+        "RelatedEvent": [],
+        "Galaxy": [],
+        "Object": [
+            {
+                "id": "1",
+                "name": "domain-ip",
+                "meta-category": "network",
+                "description": "A domain/hostname and IP address seen as a tuple in a specific time frame.",
+                "template_uuid": "43b3b146-77eb-4931-b4cc-b66c60f28734",
+                "template_version": "10",
+                "event_id": "1",
+                "uuid": "feda50b8-c69c-4f5f-ae34-91b289e46799",
+                "timestamp": "1661956788",
+                "distribution": "5",
+                "sharing_group_id": "0",
+                "comment": "",
+                "deleted": false,
+                "first_seen": null,
+                "last_seen": null,
+                "ObjectReference": [],
+                "Attribute": [
+                    {
+                        "id": "1",
+                        "type": "hostname",
+                        "category": "Network activity",
+                        "to_ids": true,
+                        "uuid": "856a3eed-aa55-4c73-bd1c-1ceadca5ca76",
+                        "event_id": "1",
+                        "distribution": "5",
+                        "timestamp": "1661956788",
+                        "comment": "",
+                        "sharing_group_id": "1",
+                        "deleted": false,
+                        "disable_correlation": false,
+                        "object_id": "3",
+                        "object_relation": "hostname",
+                        "first_seen": null,
+                        "last_seen": null,
+                        "value": "example.com",
+                        "Galaxy": [],
+                        "ShadowAttribute": [],
+                        "SharingGroup": {
+                            "id": "1",
+                            "name": "test_sharing_group",
+                            "releasability": "",
+                            "description": "",
+                            "uuid": "b9e656ba-b9c0-4506-83ed-7b54b43a57cb",
+                            "organisation_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+                            "org_id": "1",
+                            "sync_user_id": "0",
+                            "active": true,
+                            "created": "2022-08-31 14:41:35",
+                            "modified": "2022-08-31 15:06:51",
+                            "local": true,
+                            "roaming": false,
+                            "Organisation": {
+                                "id": "1",
+                                "name": "test_org",
+                                "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595"
+                            }
+                        }
+                    }
+                ]
+            }
+        ],
+        "EventReport": [],
+        "CryptographicKey": []
+    }
+}

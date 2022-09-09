@@ -1,0 +1,22 @@
+{
+    "proxy": {
+        "host": "misp-guard.com",
+        "port": 8888
+    },
+    "misp": {
+        "host": "misp-internal.local",
+        "port": 443
+    },
+    "block_rules": [
+        {
+            "id": "no-rules",
+            "description": "Empty rule",
+            "blocked_tags": [],
+            "blocked_distribution_levels": [],
+            "blocked_sharing_groups_uuids": [],
+            "blocked_attribute_types": [],
+            "blocked_attribute_categories": [],
+            "blocked_object_types": []
+        }
+    ]
+}

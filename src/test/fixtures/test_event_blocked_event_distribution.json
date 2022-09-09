@@ -1,0 +1,66 @@
+{
+    "Event": {
+        "id": "1",
+        "orgc_id": "1",
+        "org_id": "1",
+        "date": "2022-08-31",
+        "threat_level_id": "1",
+        "info": "blocked event distribution",
+        "published": false,
+        "uuid": "385283a1-b5e0-4e10-a532-dce11c365a56",
+        "attribute_count": "4",
+        "analysis": "0",
+        "timestamp": "1661956788",
+        "distribution": "0",
+        "proposal_email_lock": false,
+        "locked": false,
+        "publish_timestamp": "1661956380",
+        "sharing_group_id": "0",
+        "disable_correlation": false,
+        "extends_uuid": "",
+        "protected": null,
+        "event_creator_email": "admin@admin.test",
+        "Tag": [],
+        "Org": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "Orgc": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "Attribute": [
+            {
+                "id": "1",
+                "type": "ip-src",
+                "category": "Network activity",
+                "to_ids": false,
+                "uuid": "e37a6c99-c7dc-4e41-8c79-25e35c39df0a",
+                "event_id": "1",
+                "distribution": "5",
+                "timestamp": "1661956302",
+                "comment": "",
+                "sharing_group_id": "0",
+                "deleted": false,
+                "disable_correlation": false,
+                "object_id": "0",
+                "object_relation": null,
+                "first_seen": null,
+                "last_seen": null,
+                "value": "2.2.2.2",
+                "Galaxy": [],
+                "ShadowAttribute": []
+            }
+        ],
+        "ShadowAttribute": [],
+        "RelatedEvent": [],
+        "Galaxy": [],
+        "Object": [],
+        "EventReport": [],
+        "CryptographicKey": []
+    }
+}

@@ -1,11 +1,53 @@
 {
-    "proxy": {
-        "host": "misp-guard.com",
-        "port": 8888
+    "compartments": {
+        "compartment_1": {
+            "description": ""
+        },
+        "compartment_2": {
+            "description": ""
+        }
     },
-    "misp": {
-        "host": "misp-internal.local",
-        "port": 443
+    "compartments_rules": {
+        "can_reach": {
+            "compartment_1": [
+                "compartment_1",
+                "compartment_2"
+            ],
+            "compartment_2": [
+                "compartment_1",
+                "compartment_2"
+            ]
+        }
+    },
+    "instances": {
+        "instance_1_1": {
+            "ip": "10.0.0.1",
+            "host": "instance1-comp1.com",
+            "port": 443,
+            "compartment_id": "compartment_1",
+            "affiliation": "",
+            "taxonomies_rules": {
+                "required_taxonomies": [],
+                "allowed_tags": {}
+            }
+        },
+        "instance_1_2": {
+            "ip": "20.0.0.1",
+            "host": "instance1-comp2.com",
+            "port": 443,
+            "compartment_id": "compartment_2",
+            "affiliation": "",
+            "taxonomies_rules": {
+                "required_taxonomies": [],
+                "allowed_tags": {}
+            }
+        }
+    },
+    "instances_host_mapping": {
+        "instance1-comp2.com": "instance_2_1",
+        "20.0.0.1": "instance_1_2",
+        "instance2-comp2.com": "instance_2_2",
+        "20.0.0.2": "instance_2_2"
     },
     "block_rules": [
         {

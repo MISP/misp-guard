@@ -3,14 +3,29 @@ This script filters out MISP events based on a set of rules.
 The rules are defined in a JSON file.
 """
 
+from faulthandler import is_enabled
+from functools import lru_cache
 from mitmproxy import http, ctx
 import json
 import re
 from os.path import exists
+from enum import Enum
 
 
 class ForbiddenException (Exception):
     pass
+
+
+class MispHTTPFlow(http.HTTPFlow):
+    src_compartment_id: str = None
+    dst_compartment_id: str = None
+    src_instance_id: str = None
+    dst_instance_id: str = None
+    is_event: bool = False
+    is_shadow_attributes: bool = False
+    is_event_index: bool = False
+    is_pull: bool = False
+    is_push: bool = False
 
 
 class MispGuard:
@@ -98,14 +113,10 @@ class MispGuard:
         loader.add_option("config", str, "", "MISP Guard configuration file")
 
     def request(self, flow: http.HTTPFlow) -> None:
+        flow = self.enrich_flow(flow)
         try:
-            for endpoint in self.allowed_endpoints:
-                if re.match(endpoint["regex"], flow.request.path):
-                    if flow.request.method in endpoint["methods"]:
-                        if(self.is_external_request(flow)):
-                            return self.process_external_request(flow)
-                        else:
-                            return self.process_internal_request(flow)
+            if self.can_reach_compartment(flow) and self.is_allowed_endpoint(flow.request.method, flow.request.path):
+                return self.process_request(flow)
         except Exception as ex:
             ctx.log.error(ex)
             return self.forbidden(flow, "unexpected error, rejecting request")
@@ -114,73 +125,67 @@ class MispGuard:
         ctx.log.error("rejecting non allowed request to %s" % flow.request.path)
         return self.forbidden(flow)
 
-    def process_internal_request(self, flow: http.HTTPFlow) -> None:
-        ctx.log.info("received internal request - [%s]%s" % (flow.request.method, flow.request.path))
+    def response(self,  flow: http.HTTPFlow) -> None:
+        flow = self.enrich_flow(flow)
+        try:
+            if self.can_reach_compartment(flow):
+                return self.process_response(flow)
+        except Exception as ex:
+            ctx.log.error(ex)
+            return self.forbidden(flow, "unexpected error, rejecting response")
+
+    def enrich_flow(self, flow: http.HTTPFlow) -> MispHTTPFlow:
+        ctx.log.debug("enriching http flow")
+        flow.__class__ = MispHTTPFlow
+        flow.src_instance_id = self.get_src_instance_id(flow)
+        flow.dst_instance_id = self.get_dst_instance_id(flow)
+        flow.src_compartment_id = self.config["instances"][flow.src_instance_id]["compartment_id"]
+        flow.dst_compartment_id = self.config["instances"][flow.dst_instance_id]["compartment_id"]
+
+        if "/events/view" in flow.request.path:
+            flow.is_pull = True
+            flow.is_event = True
+
+        if "/shadow_attributes/index" in flow.request.path:
+            flow.is_pull = True
+            flow.is_shadow_attributes = True
+
         if "/events/add" in flow.request.path or "/events/edit" in flow.request.path:
+            flow.is_push = True
+            flow.is_event = True
+
+        if "/events/index" in flow.request.path:
+            flow.is_push = True
+            flow.is_event_index = True
+
+        return flow
+
+    def process_request(self, flow: MispHTTPFlow) -> None:
+        ctx.log.debug("processing request")
+        ctx.log.info("received request - [%s]%s" % (flow.request.method, flow.request.path))
+
+        if flow.is_event and flow.is_push:
             try:
                 event = self.get_event_from_message(flow.request)
             except Exception as ex:
                 return self.forbidden(flow, str(ex))
 
             # process block rules
-            return self.process_outgoing_event(event, flow)
+            return self.process_event(event, flow)
 
-    def process_external_request(self, flow: http.HTTPFlow) -> None:
-        ctx.log.info("received external request - [%s]%s" % (flow.request.method, flow.request.path))
-
-        if "/events/index" in flow.request.path:
+        if flow.is_event_index:
             params = flow.request.json()
 
             if "minimal" not in params or params["minimal"] != 1 or "published" not in params or params["published"] != 1:
                 raise ForbiddenException(
-                    "{'minimal': 1, 'published': 1} is required for /events/index external requests")
+                    "{'minimal': 1, 'published': 1} is required for /events/index requests")
 
-        # redirect to internal server
-        flow.request.host = self.config["misp"]["host"]
-        flow.request.port = self.config["misp"]["port"]
-        flow.request.scheme = "https"
-
-    def process_outgoing_event(self, event: dict, flow: http.HTTPFlow) -> None:
-        ctx.log.debug("processing outgoing event: %s" % event["Event"]["info"])
-
-        try:
-            self.check_event_level_rules(event)
-            self.check_attribute_level_rules(event["Event"]["Attribute"])
-            self.check_object_level_rules(event["Event"]["Object"])
-
-        except ForbiddenException as ex:
-            return self.forbidden(flow, str(ex))
-
-    def process_outgoing_shadow_attributes(self, shadow_attributes: dict, flow: http.HTTPFlow) -> None:
-        ctx.log.debug("processing outgoing shadow attributes...")
-
-        # TODO: if only one shadow attribute is blocked, the whole request is blocked,
-        # should we remove only the blocked one from the response?
-        # this could lead to orphan attributes if the attribute was not pulled from the remote instance
-        try:
-            self.check_attribute_level_rules(shadow_attributes)
-        except ForbiddenException as ex:
-            return self.forbidden(flow, str(ex))
-
-    def response(self, flow: http.HTTPFlow) -> None:
-        try:
-            if(self.is_external_request(flow)):
-                self.process_external_response(flow)
-            else:
-                self.process_internal_response(flow)
-        except Exception as ex:
-            ctx.log.error(ex)
-            return self.forbidden(flow, "unexpected error, rejecting response")
-
-    def process_external_response(self, flow: http.HTTPFlow) -> None:
-        ctx.log.info("received external response - [%s]%s" % (flow.request.method, flow.request.path))
-
-    def process_internal_response(self, flow: http.HTTPFlow) -> None:
-        ctx.log.info("received internal response - [%s]%s" % (flow.request.method, flow.request.path))
-        if "/events/view" in flow.request.path and flow.request.method == "HEAD":
+    def process_response(self, flow: MispHTTPFlow) -> None:
+        ctx.log.debug("processing response")
+        if flow.is_pull and flow.is_event and flow.request.method == "HEAD":
             return None  # passthrough
 
-        if "/events/view" in flow.request.path and flow.request.method != "POST":
+        if flow.is_pull and flow.is_event and flow.request.method != "POST":
             if flow.request.content is None:
                 return self.forbidden(flow, "empty request body")
 
@@ -189,9 +194,9 @@ class MispGuard:
             except Exception as ex:
                 return self.forbidden(flow, str(ex))
 
-            return self.process_outgoing_event(event, flow)
+            return self.process_event(event, flow)
 
-        if "/shadow_attributes/index" in flow.request.path:
+        if flow.is_pull and flow.is_shadow_attributes:
             try:
                 shadow_attributes = []
                 shadow_attributes_aux = self.get_shadow_attributes_from_message(flow.response)
@@ -200,16 +205,39 @@ class MispGuard:
             except Exception as ex:
                 return self.forbidden(flow, str(ex))
 
-            return self.process_outgoing_shadow_attributes(shadow_attributes, flow)
+            return self.process_shadow_attributes(shadow_attributes, flow)
 
-    def check_event_level_rules(self, event: dict) -> None:
+    def process_event(self, event: dict, flow: MispHTTPFlow) -> None:
+        ctx.log.debug("processing outgoing event: %s" % event["Event"]["info"])
+
+        try:
+            self.check_event_level_rules(flow, event)
+            self.check_attribute_level_rules(flow, event["Event"]["Attribute"])
+            self.check_object_level_rules(flow, event["Event"]["Object"])
+
+        except ForbiddenException as ex:
+            return self.forbidden(flow, str(ex))
+
+    def process_shadow_attributes(self, shadow_attributes: dict, flow: MispHTTPFlow) -> None:
+        ctx.log.debug("processing shadow attributes")
+
+        try:
+            self.check_attribute_level_rules(flow, shadow_attributes)
+        except ForbiddenException as ex:
+            return self.forbidden(flow, str(ex))
+
+    def check_event_level_rules(self, flow: MispHTTPFlow, event: dict) -> None:
+        ctx.log.debug("checking event level rules")
+        self.check_event_required_taxonomies(flow, event)
         for rule in self.config["block_rules"]:
             self.check_blocked_event_distribution_levels(rule, event)
             self.check_blocked_event_sharing_groups_uuids(rule, event)
             self.check_blocked_event_tags(rule, event)
 
-    def check_attribute_level_rules(self, attributes: dict) -> None:
+    def check_attribute_level_rules(self, flow: MispHTTPFlow, attributes: dict) -> None:
+        ctx.log.debug("checking attribute level rules")
         for attribute in attributes:
+            self.check_attribute_required_taxonomies(flow, attribute)
             for rule in self.config["block_rules"]:
                 self.check_blocked_attribute_distribution_levels(rule, attribute)
                 self.check_blocked_attribute_sharing_groups_uuids(rule, attribute)
@@ -217,16 +245,56 @@ class MispGuard:
                 self.check_blocked_attribute_categories(rule, attribute)
                 self.check_blocked_attribute_tags(rule, attribute)
             if "ShadowAttribute" in attribute:
-                self.check_attribute_level_rules(attribute["ShadowAttribute"])
+                self.check_attribute_level_rules(flow, attribute["ShadowAttribute"])
 
-    def check_object_level_rules(self, objects: dict) -> None:
+    def check_object_level_rules(self, flow: MispHTTPFlow, objects: dict) -> None:
         for object in objects:
             for rule in self.config["block_rules"]:
                 self.check_blocked_object_distribution_levels(rule, object)
                 self.check_blocked_object_sharing_groups_uuids(rule, object)
                 self.check_blocked_object_types(rule, object)
 
-            self.check_attribute_level_rules(object["Attribute"])
+            self.check_attribute_level_rules(flow, object["Attribute"])
+
+    def check_event_required_taxonomies(self, flow: MispHTTPFlow, event: dict) -> None:
+        ctx.log.debug("checking required event taxonomies")
+        if flow.is_push:
+            taxonomies_rules = self.config["instances"][flow.src_instance_id]["taxonomies_rules"]
+        if flow.is_pull:
+            taxonomies_rules = self.config["instances"][flow.dst_instance_id]["taxonomies_rules"]
+
+        if len(taxonomies_rules["required_taxonomies"]) == 0:
+            return True
+
+        if not "Tag" in event["Event"]:
+            raise ForbiddenException("event is missing required taxonomies")
+
+        for required_taxonomy in taxonomies_rules["required_taxonomies"]:
+            ctx.log.debug("checking required taxonomy: %s" % required_taxonomy)
+            allowed_tags = taxonomies_rules["allowed_tags"].get(required_taxonomy, [])
+            blocked_tags = taxonomies_rules["blocked_tags"].get(required_taxonomy, [])
+
+            self.check_required_taxonomy_exists(required_taxonomy, event["Event"]["Tag"], allowed_tags, blocked_tags)
+
+        return True
+
+    def check_required_taxonomy_exists(self, required_taxonomy: str, tags: list, allowed_tags: list = [], blocked_tags: list = []) -> bool:
+        for tag in tags:
+            if tag["name"] in blocked_tags:
+                raise ForbiddenException("tag %s is blocked" % tag["name"])
+
+            if tag["name"].startswith(required_taxonomy + ":"):
+                # if there are allowed tags, check if the tag is allowed
+                # otherwise any tag of this taxonomy is ok
+                if len(allowed_tags) == 0 or tag["name"] in allowed_tags:
+                    return True
+
+        raise ForbiddenException("event is missing required taxonomy: %s" % required_taxonomy)
+
+    def check_attribute_required_taxonomies(self, flow: MispHTTPFlow, attribute: dict) -> None:
+        ctx.log.debug("checking required atribute taxonomies")
+        # TODO
+        pass
 
     def check_blocked_event_tags(self, rule: dict, event: dict) -> None:
         if rule["blocked_tags"] and "Tag" in event["Event"]:
@@ -294,13 +362,40 @@ class MispGuard:
             raise ForbiddenException("object with a blocked type: %s. blocked by rule: %s" %
                                      (object["name"], rule["id"]))
 
-    def forbidden(self, flow: http.HTTPFlow, message: str = "endpoint not allowed") -> None:
+    def forbidden(self, flow: MispHTTPFlow, message: str = "endpoint not allowed") -> None:
         ctx.log.error("request blocked: [%s]%s - %s" % (flow.request.method, flow.request.path, message))
         flow.response = http.Response.make(403, b"Forbidden", {"Content-Type": "text/plain"})
 
-    def is_external_request(self, flow: http.HTTPFlow) -> bool:
-        ctx.log.debug("received request - [%s]%s" % (flow.request.method, flow.request.path))
-        return flow.request.host == self.config["proxy"]["host"] and flow.request.port == self.config["proxy"]["port"]
+    def get_src_instance_id(self, flow: http.HTTPFlow) -> str:
+        if flow.client_conn.peername[0] not in self.config["instances_host_mapping"]:
+            raise ForbiddenException("Source host does not exist in compartments mapping")
+
+        return self.config["instances_host_mapping"][flow.client_conn.peername[0]]
+
+    def get_dst_instance_id(self, flow: http.HTTPFlow) -> str:
+        if flow.request.host not in self.config["instances_host_mapping"]:
+            raise ForbiddenException("Source host does not exist in compartments mapping")
+
+        return self.config["instances_host_mapping"][flow.request.host]
+
+    @lru_cache
+    def can_reach_compartment(self, flow: MispHTTPFlow) -> bool:
+        ctx.log.debug("compartment reach check - src: %s, dst: %s" % (flow.src_compartment_id, flow.dst_compartment_id))
+
+        if flow.dst_compartment_id in self.config["compartments_rules"]["can_reach"][flow.src_compartment_id]:
+            return True
+
+        ctx.log.error("request blocked: [%s]%s - %s" %
+                      (flow.request.method, flow.request.path, "cannot reach compartment"))
+        return False
+
+    @lru_cache
+    def is_allowed_endpoint(self, method: str, path: str) -> bool:
+        for endpoint in self.allowed_endpoints:
+            if re.match(endpoint["regex"], path) and method in endpoint["methods"]:
+                return True
+
+        return False
 
     def get_event_from_message(self, message: http.Message) -> dict:
         if message.content is None:

@@ -120,3 +120,9 @@ Done, outgoing MISP sync requests will be inspected and dropped according to the
 
 
 > NOTE: add `-v` to `mitmdump` to increase verbosity and display debug logs.
+
+### Testing
+ ```
+ src src/
+ pytest
+ ```

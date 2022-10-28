@@ -1,15 +1,4 @@
 {
-    "compartments": {
-        "compartment_1": {
-            "description": ""
-        },
-        "compartment_2": {
-            "description": ""
-        },
-        "compartment_3": {
-            "description": ""
-        }
-    },
     "compartments_rules": {
         "can_reach": {
             "compartment_1": [
@@ -42,8 +31,27 @@
             "affiliation": "",
             "taxonomies_rules": {
                 "required_taxonomies": [],
-                "allowed_tags": {}
-            }
+                "allowed_tags": {},
+                "blocked_tags": [
+                    "tlp:red"
+                ]
+            },
+            "blocked_distribution_levels": [
+                "0"
+            ],
+            "blocked_sharing_groups_uuids": [
+                "b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
+            ],
+            "blocked_attribute_types": [
+                "passport-number",
+                "email"
+            ],
+            "blocked_attribute_categories": [
+                "Person"
+            ],
+            "blocked_object_types": [
+                "person"
+            ]
         },
         "instance_1_2": {
             "ip": "10.0.0.2",
@@ -53,8 +61,27 @@
             "affiliation": "",
             "taxonomies_rules": {
                 "required_taxonomies": [],
-                "allowed_tags": {}
-            }
+                "allowed_tags": {},
+                "blocked_tags": [
+                    "tlp:red"
+                ]
+            },
+            "blocked_distribution_levels": [
+                "0"
+            ],
+            "blocked_sharing_groups_uuids": [
+                "b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
+            ],
+            "blocked_attribute_types": [
+                "passport-number",
+                "email"
+            ],
+            "blocked_attribute_categories": [
+                "Person"
+            ],
+            "blocked_object_types": [
+                "person"
+            ]
         },
         "instance_2_1": {
             "ip": "20.0.0.1",
@@ -64,8 +91,27 @@
             "affiliation": "",
             "taxonomies_rules": {
                 "required_taxonomies": [],
-                "allowed_tags": {}
-            }
+                "allowed_tags": {},
+                "blocked_tags": [
+                    "tlp:red"
+                ]
+            },
+            "blocked_distribution_levels": [
+                "0"
+            ],
+            "blocked_sharing_groups_uuids": [
+                "b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
+            ],
+            "blocked_attribute_types": [
+                "passport-number",
+                "email"
+            ],
+            "blocked_attribute_categories": [
+                "Person"
+            ],
+            "blocked_object_types": [
+                "person"
+            ]
         },
         "instance_2_2": {
             "ip": "20.0.0.2",
@@ -75,8 +121,27 @@
             "affiliation": "",
             "taxonomies_rules": {
                 "required_taxonomies": [],
-                "allowed_tags": {}
-            }
+                "allowed_tags": {},
+                "blocked_tags": [
+                    "tlp:red"
+                ]
+            },
+            "blocked_distribution_levels": [
+                "0"
+            ],
+            "blocked_sharing_groups_uuids": [
+                "b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
+            ],
+            "blocked_attribute_types": [
+                "passport-number",
+                "email"
+            ],
+            "blocked_attribute_categories": [
+                "Person"
+            ],
+            "blocked_object_types": [
+                "person"
+            ]
         },
         "instance_1_3": {
             "ip": "30.0.0.1",
@@ -86,8 +151,27 @@
             "affiliation": "",
             "taxonomies_rules": {
                 "required_taxonomies": [],
-                "allowed_tags": {}
-            }
+                "allowed_tags": {},
+                "blocked_tags": [
+                    "tlp:red"
+                ]
+            },
+            "blocked_distribution_levels": [
+                "0"
+            ],
+            "blocked_sharing_groups_uuids": [
+                "b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
+            ],
+            "blocked_attribute_types": [
+                "passport-number",
+                "email"
+            ],
+            "blocked_attribute_categories": [
+                "Person"
+            ],
+            "blocked_object_types": [
+                "person"
+            ]
         },
         "instance_1_4": {
             "ip": "40.0.0.1",
@@ -106,35 +190,11 @@
                         "tlp:green"
                     ]
                 },
-                "blocked_tags": {
-                    "tlp": [
-                        "tlp:rainbow"
-                    ]
-                }
-            }
-        }
-    },
-    "instances_host_mapping": {
-        "instance1-comp1.com": "instance_1_1",
-        "10.0.0.1": "instance_1_1",
-        "instance2-comp1.com": "instance_1_2",
-        "10.0.0.2": "instance_1_2",
-        "instance1-comp2.com": "instance_2_1",
-        "20.0.0.1": "instance_1_2",
-        "instance2-comp2.com": "instance_2_2",
-        "20.0.0.2": "instance_2_2",
-        "instance1-comp3.com": "instance_1_3",
-        "30.0.0.1": "instance_1_3",
-        "instance1-comp4.com": "instance_1_4",
-        "40.0.0.1": "instance_1_4"
-    },
-    "block_rules": [
-        {
-            "id": "test-rule",
-            "description": "test",
-            "blocked_tags": [
-                "tlp:red"
-            ],
+                "blocked_tags": [
+                    "tlp:rainbow",
+                    "tlp:red"
+                ]
+            },
             "blocked_distribution_levels": [
                 "0"
             ],
@@ -152,5 +212,19 @@
                 "person"
             ]
         }
-    ]
+    },
+    "instances_host_mapping": {
+        "instance1-comp1.com": "instance_1_1",
+        "10.0.0.1": "instance_1_1",
+        "instance2-comp1.com": "instance_1_2",
+        "10.0.0.2": "instance_1_2",
+        "instance1-comp2.com": "instance_2_1",
+        "20.0.0.1": "instance_1_2",
+        "instance2-comp2.com": "instance_2_2",
+        "20.0.0.2": "instance_2_2",
+        "instance1-comp3.com": "instance_1_3",
+        "30.0.0.1": "instance_1_3",
+        "instance1-comp4.com": "instance_1_4",
+        "40.0.0.1": "instance_1_4"
+    }
 }

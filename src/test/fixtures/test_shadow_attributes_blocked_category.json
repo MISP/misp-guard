@@ -21,14 +21,7 @@
                 "name": "HOST",
                 "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
                 "id": "1"
-            },
-            "Tag": [
-                {
-                    "id": "1",
-                    "name": "tlp:red",
-                    "colour": "#FF0000"
-                }
-            ]
+            }
         }
     }
 ]

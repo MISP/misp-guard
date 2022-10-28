@@ -5,7 +5,7 @@
             "old_id": "1",
             "event_id": "1",
             "type": "passport-number",
-            "category": "Person",
+            "category": "PersonV2",
             "uuid": "856a3eed-aa55-4c73-bd1c-1ceadca5ca76",
             "to_ids": true,
             "comment": "",

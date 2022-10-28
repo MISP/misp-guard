@@ -5,7 +5,7 @@
         "org_id": "1",
         "date": "2022-08-31",
         "threat_level_id": "1",
-        "info": "blocked missing required event tag",
+        "info": "blocked missing required allowed event tag",
         "published": false,
         "uuid": "385283a1-b5e0-4e10-a532-dce11c365a56",
         "attribute_count": "4",

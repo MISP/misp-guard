@@ -1,12 +1,4 @@
 {
-    "compartments": {
-        "compartment_1": {
-            "description": ""
-        },
-        "compartment_2": {
-            "description": ""
-        }
-    },
     "compartments_rules": {
         "can_reach": {
             "compartment_1": [
@@ -28,8 +20,14 @@
             "affiliation": "",
             "taxonomies_rules": {
                 "required_taxonomies": [],
-                "allowed_tags": {}
-            }
+                "allowed_tags": {},
+                "blocked_tags": []
+            },
+            "blocked_distribution_levels": [],
+            "blocked_sharing_groups_uuids": [],
+            "blocked_attribute_types": [],
+            "blocked_attribute_categories": [],
+            "blocked_object_types": []
         },
         "instance_1_2": {
             "ip": "20.0.0.1",
@@ -39,8 +37,14 @@
             "affiliation": "",
             "taxonomies_rules": {
                 "required_taxonomies": [],
-                "allowed_tags": {}
-            }
+                "allowed_tags": {},
+                "blocked_tags": []
+            },
+            "blocked_distribution_levels": [],
+            "blocked_sharing_groups_uuids": [],
+            "blocked_attribute_types": [],
+            "blocked_attribute_categories": [],
+            "blocked_object_types": []
         }
     },
     "instances_host_mapping": {
@@ -48,17 +52,5 @@
         "20.0.0.1": "instance_1_2",
         "instance2-comp2.com": "instance_2_2",
         "20.0.0.2": "instance_2_2"
-    },
-    "block_rules": [
-        {
-            "id": "no-rules",
-            "description": "Empty rule",
-            "blocked_tags": [],
-            "blocked_distribution_levels": [],
-            "blocked_sharing_groups_uuids": [],
-            "blocked_attribute_types": [],
-            "blocked_attribute_categories": [],
-            "blocked_object_types": []
-        }
-    ]
+    }
 }

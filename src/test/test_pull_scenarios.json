@@ -12,7 +12,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - event has blocked tag: tlp:red. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - event has blocked tag: tlp:red"
         ]
     },
     {
@@ -28,7 +28,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked tag: tlp:red. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked tag: tlp:red"
         ]
     },
     {
@@ -44,7 +44,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked tag: tlp:red. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked tag: tlp:red"
         ]
     },
     {
@@ -60,7 +60,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_event_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - event has blocked distribution level: 0. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - event has blocked distribution level: 0"
         ]
     },
     {
@@ -76,7 +76,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked distribution level: 0. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked distribution level: 0"
         ]
     },
     {
@@ -92,7 +92,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - object with a blocked distribution level: 0. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - object with a blocked distribution level: 0"
         ]
     },
     {
@@ -108,7 +108,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked distribution level: 0. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked distribution level: 0"
         ]
     },
     {
@@ -124,7 +124,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - event has blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - event has blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
         ]
     },
     {
@@ -140,7 +140,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
         ]
     },
     {
@@ -156,7 +156,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - object with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - object with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
         ]
     },
     {
@@ -172,7 +172,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
         ]
     },
     {
@@ -188,7 +188,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_type.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked type: passport-number. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked type: passport-number"
         ]
     },
     {
@@ -204,7 +204,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_type.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked type: passport-number. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked type: passport-number"
         ]
     },
     {
@@ -220,7 +220,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_category.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked category: Person. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked category: Person"
         ]
     },
     {
@@ -236,7 +236,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_category.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked category: Person. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked category: Person"
         ]
     },
     {
@@ -252,7 +252,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_type.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - object with a blocked type: person. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - object with a blocked type: person"
         ]
     },
     {
@@ -268,7 +268,7 @@
         "event_fixture_file": "./test/fixtures/test_shadow_attributes_blocked_tag.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked tag: tlp:red. blocked by rule: test-rule"
+            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked tag: tlp:red"
         ]
     },
     {
@@ -284,7 +284,7 @@
         "event_fixture_file": "./test/fixtures/test_shadow_attributes_blocked_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked distribution level: 0. blocked by rule: test-rule"
+            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked distribution level: 0"
         ]
     },
     {
@@ -300,7 +300,7 @@
         "event_fixture_file": "./test/fixtures/test_shadow_attributes_blocked_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb. blocked by rule: test-rule"
+            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
         ]
     },
     {
@@ -316,7 +316,7 @@
         "event_fixture_file": "./test/fixtures/test_shadow_attributes_blocked_type.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked type: passport-number. blocked by rule: test-rule"
+            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked type: passport-number"
         ]
     },
     {
@@ -332,7 +332,7 @@
         "event_fixture_file": "./test/fixtures/test_shadow_attributes_blocked_category.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked category: Person. blocked by rule: test-rule"
+            "request blocked: [GET]/shadow_attributes/index/all:1/timestamp:0/limit:1000/page:1/deleted[]:0/deleted[]:1.json - attribute with a blocked category: Person"
         ]
     },
     {
@@ -348,7 +348,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_object_shadow_attribute_type.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked type: passport-number. blocked by rule: test-rule"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - attribute with a blocked type: passport-number"
         ]
     },
     {
@@ -426,7 +426,7 @@
         "event_fixture_file": "./test/fixtures/test_event_blocked_required_blocked_tag.json",
         "expected_status_code": 403,
         "expected_logs": [
-            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - tag tlp:rainbow is blocked"
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - event has blocked tag: tlp:rainbow"
         ]
     },
     {

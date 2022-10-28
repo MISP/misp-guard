@@ -59,7 +59,14 @@
                 "last_seen": null,
                 "value": "8.8.8.8",
                 "Galaxy": [],
-                "ShadowAttribute": []
+                "ShadowAttribute": [],
+                "Tag": [
+                    {
+                        "id": "1",
+                        "name": "tlp:clear",
+                        "colour": "#FFFFF"
+                    }
+                ]
             }
         ],
         "ShadowAttribute": [],

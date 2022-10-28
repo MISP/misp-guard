@@ -428,5 +428,19 @@
         "expected_logs": [
             "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - tag tlp:rainbow is blocked"
         ]
+    },
+    {
+        "name": "pull_event_required_taxonomy_allowed_tag",
+        "host": "instance1-comp4.com",
+        "port": 443,
+        "url": "/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "event_fixture_file": "./test/fixtures/test_event_non-blocked_required_allowed_tag.json",
+        "expected_status_code": 200,
+        "expected_logs": []
     }
 ]

@@ -113,10 +113,13 @@ class MispGuard:
         loader.add_option("config", str, "", "MISP Guard configuration file")
 
     def request(self, flow: http.HTTPFlow) -> None:
-        flow = self.enrich_flow(flow)
         try:
+            flow = self.enrich_flow(flow)
             if self.can_reach_compartment(flow) and self.is_allowed_endpoint(flow.request.method, flow.request.path):
                 return self.process_request(flow)
+        except ForbiddenException as ex:
+            ctx.log.error(ex)
+            return self.forbidden(flow, str(ex))
         except Exception as ex:
             ctx.log.error(ex)
             return self.forbidden(flow, "unexpected error, rejecting request")
@@ -126,10 +129,13 @@ class MispGuard:
         return self.forbidden(flow)
 
     def response(self,  flow: http.HTTPFlow) -> None:
-        flow = self.enrich_flow(flow)
         try:
+            flow = self.enrich_flow(flow)
             if self.can_reach_compartment(flow):
                 return self.process_response(flow)
+        except ForbiddenException as ex:
+            ctx.log.error(ex)
+            return self.forbidden(flow, str(ex))
         except Exception as ex:
             ctx.log.error(ex)
             return self.forbidden(flow, "unexpected error, rejecting response")
@@ -183,6 +189,7 @@ class MispGuard:
     def process_response(self, flow: MispHTTPFlow) -> None:
         ctx.log.debug("processing response")
         if flow.is_pull and flow.is_event and flow.request.method == "HEAD":
+            ctx.log.debug("pull request [HEAD]/events/view passthrough")
             return None  # passthrough
 
         if flow.is_pull and flow.is_event and flow.request.method != "POST":
@@ -342,10 +349,6 @@ class MispGuard:
             raise ForbiddenException("attribute with a blocked category: %s. blocked by rule: %s" %
                                      (attribute["category"], rule["id"]))
 
-    def check_blocked_object_attribute_tags(self, rule: dict, object: dict) -> None:
-        for attribute in object["Attribute"]:
-            self.check_blocked_attribute_tags(rule, attribute)
-
     def check_blocked_object_distribution_levels(self, rule: dict, object: dict) -> None:
         if object["distribution"] in rule["blocked_distribution_levels"]:
             raise ForbiddenException("object with a blocked distribution level: %s. blocked by rule: %s" %
@@ -368,13 +371,13 @@ class MispGuard:
 
     def get_src_instance_id(self, flow: http.HTTPFlow) -> str:
         if flow.client_conn.peername[0] not in self.config["instances_host_mapping"]:
-            raise ForbiddenException("Source host does not exist in compartments mapping")
+            raise ForbiddenException("source host does not exist in instances hosts mapping")
 
         return self.config["instances_host_mapping"][flow.client_conn.peername[0]]
 
     def get_dst_instance_id(self, flow: http.HTTPFlow) -> str:
         if flow.request.host not in self.config["instances_host_mapping"]:
-            raise ForbiddenException("Source host does not exist in compartments mapping")
+            raise ForbiddenException("destination host does not exist in instances hosts mapping")
 
         return self.config["instances_host_mapping"][flow.request.host]
 

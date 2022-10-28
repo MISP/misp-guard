@@ -666,5 +666,33 @@
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - tag tlp:rainbow is blocked"
         ]
+    },
+    {
+        "name": "push_new_event_required_taxonomy_allowed_tag",
+        "host": "instance1-comp1.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "40.0.0.1",
+            "port": 22
+        },
+        "event_fixture_file": "./test/fixtures/test_event_non-blocked_required_allowed_tag.json",
+        "expected_status_code": 200,
+        "expected_logs": []
+    },
+    {
+        "name": "push_edit_event_required_taxonomy_allowed_tag",
+        "host": "instance1-comp1.com",
+        "port": 443,
+        "url": "/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "40.0.0.1",
+            "port": 22
+        },
+        "event_fixture_file": "./test/fixtures/test_event_non-blocked_required_allowed_tag.json",
+        "expected_status_code": 200,
+        "expected_logs": []
     }
 ]

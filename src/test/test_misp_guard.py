@@ -54,7 +54,8 @@ class TestMispGuard:
         await self.tctx.master.await_log("MispGuard initialized")
         assert self.tctx.master.has_log(
             "{'minimal': 1, 'published': 1} is required for /events/index requests")
-        assert self.tctx.master.has_log("request blocked: [POST]/events/index - unexpected error, rejecting request")
+        assert self.tctx.master.has_log(
+            "request blocked: [POST]/events/index - {'minimal': 1, 'published': 1} is required for /events/index requests")
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
@@ -75,6 +76,96 @@ class TestMispGuard:
         await self.tctx.master.await_log("MispGuard initialized")
         assert self.tctx.master.has_log("rejecting non allowed request to /users")
         assert self.tctx.master.has_log("request blocked: [GET]/users - endpoint not allowed")
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_pull_event_head_passthrough(self):
+        mispguard = self.load_mispguard()
+
+        event_view_req = tutils.treq(
+            port=443,
+            host="instance1-comp1.com",
+            path="/events/view/385283a1-b5e0-4e10-a532-dce11c365a56",
+            method=b"HEAD",
+        )
+
+        event_view_resp = tutils.tresp(
+            status_code=200
+        )
+
+        flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert flow.response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_pull_event_empty_response_invalid_json(self):
+        mispguard = self.load_mispguard()
+
+        event_view_req = tutils.treq(
+            port=443,
+            host="instance1-comp1.com",
+            path="/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1",
+            method=b"GET",
+        )
+
+        event_view_resp = tutils.tresp(
+            status_code=200
+        )
+
+        flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        await self.tctx.master.await_log("MispGuard initialized")
+        assert self.tctx.master.has_log(
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - invalid JSON body")
+
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_pull_unknown_src_host(self):
+        mispguard = self.load_mispguard()
+
+        event_view_req = tutils.treq(
+            port=443,
+            host="instance1-comp1.com",
+            path="/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1",
+            method=b"GET",
+        )
+
+        flow = tflow.tflow(req=event_view_req)
+        flow.client_conn.peername = ("90.0.0.1", "22")
+        mispguard.request(flow)
+
+        await self.tctx.master.await_log("MispGuard initialized")
+        assert self.tctx.master.has_log(
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - source host does not exist in instances hosts mapping")
+
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_pull_unknown_dst_host(self):
+        mispguard = self.load_mispguard()
+
+        event_view_req = tutils.treq(
+            port=443,
+            host="instance99-comp1.com",
+            path="/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1",
+            method=b"GET",
+        )
+
+        flow = tflow.tflow(req=event_view_req)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+        mispguard.request(flow)
+
+        await self.tctx.master.await_log("MispGuard initialized")
+        assert self.tctx.master.has_log(
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - destination host does not exist in instances hosts mapping")
+
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
@@ -111,7 +202,7 @@ class TestMispGuard:
             "expected_status_code"], f"Expected status code {scenario['expected_status_code']} but got {flow.response.status_code} for scenario {scenario['name']}"
         await self.tctx.master.await_log("MispGuard initialized")
         for expected_log in scenario["expected_logs"]:
-            self.tctx.master.dump_log()
+            # self.tctx.master.dump_log()
             assert self.tctx.master.has_log(
                 expected_log), f"expected log {expected_log} not found for scenario {scenario['name']}"
 
@@ -151,6 +242,6 @@ class TestMispGuard:
             "expected_status_code"], f"Expected status code {scenario['expected_status_code']} but got {flow.response.status_code} for scenario {scenario['name']}"
         await self.tctx.master.await_log("MispGuard initialized")
         for expected_log in scenario["expected_logs"]:
-            self.tctx.master.dump_log()
+            # self.tctx.master.dump_log()
             assert self.tctx.master.has_log(
                 expected_log), f"expected log {expected_log} not found for scenario {scenario['name']}"

@@ -1,4 +1,3 @@
 mitmproxy
 jsonschema
 jsonschema[format]
-yaml

@@ -125,3 +125,6 @@ venv.bak/
 dmypy.json
 
 config.json
+
+# logs
+logs/

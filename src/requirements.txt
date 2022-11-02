@@ -1,3 +1,4 @@
 mitmproxy
 jsonschema
 jsonschema[format]
+pyyaml

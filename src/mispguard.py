@@ -5,6 +5,7 @@ The rules are defined in a JSON file.
 
 from functools import lru_cache
 from mitmproxy import http, ctx
+from jsonschema import validate, Draft202012Validator
 import json
 import re
 from os.path import exists
@@ -95,7 +96,16 @@ class MispGuard:
     def configure(self, updated):
         if ctx.options.config and exists(ctx.options.config):
             try:
+                with open('config.schema.json', 'r') as file:
+                    schema = json.load(file)
                 self.config = json.load(open(ctx.options.config))
+
+                validate(
+                    instance=self.config,
+                    schema=schema,
+                    format_checker=Draft202012Validator.FORMAT_CHECKER,
+                )
+
             except Exception as e:
                 ctx.log.error("failed to load config file: %s" % str(e))
                 exit(1)
@@ -326,7 +336,8 @@ class MispGuard:
     def check_blocked_event_sharing_groups_uuids(self, blocked_sharing_groups_uuids: list, event: dict) -> None:
         if blocked_sharing_groups_uuids and "SharingGroup" in event["Event"]:
             if event["Event"]["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
-                raise ForbiddenException("event has blocked sharing group uuid: %s" % event["Event"]["SharingGroup"]["uuid"])
+                raise ForbiddenException("event has blocked sharing group uuid: %s" %
+                                         event["Event"]["SharingGroup"]["uuid"])
 
     def check_blocked_attribute_tags(self, taxonomies_rules: dict, attribute: dict) -> None:
         if taxonomies_rules["blocked_tags"] and "Tag" in attribute:

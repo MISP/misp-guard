@@ -1,0 +1,169 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "properties": {
+        "compartments_rules": {
+            "type": "object",
+            "properties": {
+                "can_reach": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^[a-z0-9_]+$": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "pattern": "^[a-z0-9_]+$"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "instances": {
+            "type": "object",
+            "patternProperties": {
+                "^[a-z0-9_]+$": {
+                    "type": "object",
+                    "properties": {
+                        "ip": {
+                            "type": "string",
+                            "oneOf": [
+                                {
+                                    "format": "ipv4"
+                                },
+                                {
+                                    "format": "ipv6"
+                                }
+                            ]
+                        },
+                        "host": {
+                            "type": "string",
+                            "format": "hostname"
+                        },
+                        "port": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 65535
+                        },
+                        "compartment_id": {
+                            "type": "string",
+                            "pattern": "^[a-z0-9_]+$"
+                        },
+                        "affiliation": {
+                            "type": "string"
+                        },
+                        "taxonomies_rules": {
+                            "type": "object",
+                            "properties": {
+                                "required_taxonomies": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "examples": [
+                                            "tlp"
+                                        ]
+                                    }
+                                },
+                                "allowed_tags": {
+                                    "type": "object",
+                                    "patternProperties": {
+                                        "^[a-z0-9_]+$": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "examples": [
+                                                    "tlp:clear"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                "blocked_tags": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "examples": [
+                                            "tlp:red"
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "blocked_distribution_levels": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "0",
+                                    "1",
+                                    "2",
+                                    "3",
+                                    "4",
+                                    "5"
+                                ]
+                            }
+                        },
+                        "blocked_sharing_groups_uuids": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            }
+                        },
+                        "blocked_attribute_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "examples": [
+                                    "passport-number"
+                                ]
+                            }
+                        },
+                        "blocked_attribute_categories": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "examples": [
+                                    "Person"
+                                ]
+                            }
+                        },
+                        "blocked_object_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "examples": [
+                                    "person"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "ip",
+                        "host",
+                        "port",
+                        "compartment_id",
+                        "affiliation",
+                        "taxonomies_rules",
+                        "blocked_distribution_levels",
+                        "blocked_sharing_groups_uuids",
+                        "blocked_attribute_types",
+                        "blocked_attribute_categories",
+                        "blocked_object_types"
+                    ]
+                }
+            }
+        },
+        "instances_host_mapping": {
+            "patternProperties": {
+                "^[a-z0-9_-]+$": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_]+$",
+                    "examples": [
+                        "instance_1"
+                    ]
+                }
+            }
+        }
+    }
+}

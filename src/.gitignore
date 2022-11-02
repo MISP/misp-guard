@@ -127,4 +127,4 @@ dmypy.json
 config.json
 
 # logs
-logs/*
+logs/*.log

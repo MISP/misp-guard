@@ -5,7 +5,7 @@
         "org_id": "1",
         "date": "2022-08-31",
         "threat_level_id": "1",
-        "info": "blocked attribute type",
+        "info": "non-blocked",
         "published": false,
         "uuid": "385283a1-b5e0-4e10-a532-dce11c365a56",
         "attribute_count": "4",
@@ -35,8 +35,8 @@
         "Attribute": [
             {
                 "id": "1",
-                "type": "passport-number",
-                "category": "PersonV2",
+                "type": "ip-src",
+                "category": "Network activity",
                 "to_ids": false,
                 "uuid": "e37a6c99-c7dc-4e41-8c79-25e35c39df0a",
                 "event_id": "1",
@@ -50,7 +50,7 @@
                 "object_relation": null,
                 "first_seen": null,
                 "last_seen": null,
-                "value": "987654321",
+                "value": "8.8.8.8",
                 "Galaxy": [],
                 "ShadowAttribute": []
             }

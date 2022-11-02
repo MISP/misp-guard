@@ -3,6 +3,7 @@ This script filters out MISP events based on a set of rules.
 The rules are defined in a JSON file.
 """
 
+from functools import lru_cache
 from mitmproxy import http, ctx
 import json
 import re
@@ -11,6 +12,18 @@ from os.path import exists
 
 class ForbiddenException (Exception):
     pass
+
+
+class MISPHTTPFlow(http.HTTPFlow):
+    src_compartment_id: str = None
+    dst_compartment_id: str = None
+    src_instance_id: str = None
+    dst_instance_id: str = None
+    is_event: bool = False
+    is_shadow_attributes: bool = False
+    is_event_index: bool = False
+    is_pull: bool = False
+    is_push: bool = False
 
 
 class MispGuard:
@@ -87,8 +100,6 @@ class MispGuard:
                 ctx.log.error("failed to load config file: %s" % str(e))
                 exit(1)
 
-            if self.config["block_rules"]:
-                ctx.log.info("running block rules: %s" % ','.join([rule["id"] for rule in self.config["block_rules"]]))
         else:
             ctx.log.error("failed to load config file, use: `--set config=config.json`")
             exit(1)
@@ -99,13 +110,12 @@ class MispGuard:
 
     def request(self, flow: http.HTTPFlow) -> None:
         try:
-            for endpoint in self.allowed_endpoints:
-                if re.match(endpoint["regex"], flow.request.path):
-                    if flow.request.method in endpoint["methods"]:
-                        if(self.is_external_request(flow)):
-                            return self.process_external_request(flow)
-                        else:
-                            return self.process_internal_request(flow)
+            flow = self.enrich_flow(flow)
+            if self.can_reach_compartment(flow) and self.is_allowed_endpoint(flow.request.method, flow.request.path):
+                return self.process_request(flow)
+        except ForbiddenException as ex:
+            ctx.log.error(ex)
+            return self.forbidden(flow, str(ex))
         except Exception as ex:
             ctx.log.error(ex)
             return self.forbidden(flow, "unexpected error, rejecting request")
@@ -114,73 +124,72 @@ class MispGuard:
         ctx.log.error("rejecting non allowed request to %s" % flow.request.path)
         return self.forbidden(flow)
 
-    def process_internal_request(self, flow: http.HTTPFlow) -> None:
-        ctx.log.info("received internal request - [%s]%s" % (flow.request.method, flow.request.path))
+    def response(self,  flow: http.HTTPFlow) -> None:
+        try:
+            flow = self.enrich_flow(flow)
+            if self.can_reach_compartment(flow):
+                return self.process_response(flow)
+        except ForbiddenException as ex:
+            ctx.log.error(ex)
+            return self.forbidden(flow, str(ex))
+        except Exception as ex:
+            ctx.log.error(ex)
+            return self.forbidden(flow, "unexpected error, rejecting response")
+
+    def enrich_flow(self, flow: http.HTTPFlow) -> MISPHTTPFlow:
+        ctx.log.debug("enriching http flow")
+        flow.__class__ = MISPHTTPFlow
+        flow.src_instance_id = self.get_src_instance_id(flow)
+        flow.dst_instance_id = self.get_dst_instance_id(flow)
+        flow.src_compartment_id = self.config["instances"][flow.src_instance_id]["compartment_id"]
+        flow.dst_compartment_id = self.config["instances"][flow.dst_instance_id]["compartment_id"]
+
+        if "/events/view" in flow.request.path:
+            flow.is_pull = True
+            flow.is_event = True
+
+        if "/shadow_attributes/index" in flow.request.path:
+            flow.is_pull = True
+            flow.is_shadow_attributes = True
+
         if "/events/add" in flow.request.path or "/events/edit" in flow.request.path:
+            flow.is_push = True
+            flow.is_event = True
+
+        if "/events/index" in flow.request.path:
+            flow.is_push = True
+            flow.is_event_index = True
+
+        return flow
+
+    def process_request(self, flow: MISPHTTPFlow) -> None:
+        ctx.log.debug("processing request")
+        ctx.log.info("received request - [%s]%s" % (flow.request.method, flow.request.path))
+
+        if flow.is_event and flow.is_push:
             try:
                 event = self.get_event_from_message(flow.request)
             except Exception as ex:
                 return self.forbidden(flow, str(ex))
 
             # process block rules
-            return self.process_outgoing_event(event, flow)
+            rules = self.get_rules(flow)
+            return self.process_event(rules, event, flow)
 
-    def process_external_request(self, flow: http.HTTPFlow) -> None:
-        ctx.log.info("received external request - [%s]%s" % (flow.request.method, flow.request.path))
-
-        if "/events/index" in flow.request.path:
+        if flow.is_event_index:
             params = flow.request.json()
 
             if "minimal" not in params or params["minimal"] != 1 or "published" not in params or params["published"] != 1:
                 raise ForbiddenException(
-                    "{'minimal': 1, 'published': 1} is required for /events/index external requests")
+                    "{'minimal': 1, 'published': 1} is required for /events/index requests")
 
-        # redirect to internal server
-        flow.request.host = self.config["misp"]["host"]
-        flow.request.port = self.config["misp"]["port"]
-        flow.request.scheme = "https"
-
-    def process_outgoing_event(self, event: dict, flow: http.HTTPFlow) -> None:
-        ctx.log.debug("processing outgoing event: %s" % event["Event"]["info"])
-
-        try:
-            self.check_event_level_rules(event)
-            self.check_attribute_level_rules(event["Event"]["Attribute"])
-            self.check_object_level_rules(event["Event"]["Object"])
-
-        except ForbiddenException as ex:
-            return self.forbidden(flow, str(ex))
-
-    def process_outgoing_shadow_attributes(self, shadow_attributes: dict, flow: http.HTTPFlow) -> None:
-        ctx.log.debug("processing outgoing shadow attributes...")
-
-        # TODO: if only one shadow attribute is blocked, the whole request is blocked,
-        # should we remove only the blocked one from the response?
-        # this could lead to orphan attributes if the attribute was not pulled from the remote instance
-        try:
-            self.check_attribute_level_rules(shadow_attributes)
-        except ForbiddenException as ex:
-            return self.forbidden(flow, str(ex))
-
-    def response(self, flow: http.HTTPFlow) -> None:
-        try:
-            if(self.is_external_request(flow)):
-                self.process_external_response(flow)
-            else:
-                self.process_internal_response(flow)
-        except Exception as ex:
-            ctx.log.error(ex)
-            return self.forbidden(flow, "unexpected error, rejecting response")
-
-    def process_external_response(self, flow: http.HTTPFlow) -> None:
-        ctx.log.info("received external response - [%s]%s" % (flow.request.method, flow.request.path))
-
-    def process_internal_response(self, flow: http.HTTPFlow) -> None:
-        ctx.log.info("received internal response - [%s]%s" % (flow.request.method, flow.request.path))
-        if "/events/view" in flow.request.path and flow.request.method == "HEAD":
+    def process_response(self, flow: MISPHTTPFlow) -> None:
+        ctx.log.debug("processing response")
+        if flow.is_pull and flow.is_event and flow.request.method == "HEAD":
+            ctx.log.debug("pull request [HEAD]/events/view passthrough")
             return None  # passthrough
 
-        if "/events/view" in flow.request.path and flow.request.method != "POST":
+        if flow.is_pull and flow.is_event and flow.request.method != "POST":
             if flow.request.content is None:
                 return self.forbidden(flow, "empty request body")
 
@@ -189,9 +198,10 @@ class MispGuard:
             except Exception as ex:
                 return self.forbidden(flow, str(ex))
 
-            return self.process_outgoing_event(event, flow)
+            rules = self.get_rules(flow)
+            return self.process_event(rules, event, flow)
 
-        if "/shadow_attributes/index" in flow.request.path:
+        if flow.is_pull and flow.is_shadow_attributes:
             try:
                 shadow_attributes = []
                 shadow_attributes_aux = self.get_shadow_attributes_from_message(flow.response)
@@ -200,107 +210,196 @@ class MispGuard:
             except Exception as ex:
                 return self.forbidden(flow, str(ex))
 
-            return self.process_outgoing_shadow_attributes(shadow_attributes, flow)
+            rules = self.get_rules(flow)
+            return self.process_shadow_attributes(rules, shadow_attributes, flow)
 
-    def check_event_level_rules(self, event: dict) -> None:
-        for rule in self.config["block_rules"]:
-            self.check_blocked_event_distribution_levels(rule, event)
-            self.check_blocked_event_sharing_groups_uuids(rule, event)
-            self.check_blocked_event_tags(rule, event)
+    def get_rules(self, flow: MISPHTTPFlow) -> list:
+        ctx.log.debug("getting misp-guard instance rules")
+        rules = {}
+        if flow.is_push:
+            rules = self.config["instances"][flow.src_instance_id]
+        if flow.is_pull:
+            rules = self.config["instances"][flow.dst_instance_id]
 
-    def check_attribute_level_rules(self, attributes: dict) -> None:
+        return rules
+
+    def process_event(self, rules: dict, event: dict, flow: MISPHTTPFlow) -> None:
+        ctx.log.debug("processing outgoing event: %s" % event["Event"]["info"])
+
+        try:
+            self.check_event_level_rules(rules, flow, event)
+            self.check_attribute_level_rules(rules, event["Event"]["Attribute"])
+            self.check_object_level_rules(rules, event["Event"]["Object"])
+
+        except ForbiddenException as ex:
+            return self.forbidden(flow, str(ex))
+
+    def process_shadow_attributes(self, rules: dict, shadow_attributes: dict, flow: MISPHTTPFlow) -> None:
+        ctx.log.debug("processing shadow attributes")
+
+        try:
+            self.check_attribute_level_rules(rules, shadow_attributes)
+        except ForbiddenException as ex:
+            return self.forbidden(flow, str(ex))
+
+    def check_event_level_rules(self, rules: dict, flow: MISPHTTPFlow, event: dict) -> None:
+        ctx.log.debug("checking event level rules")
+
+        self.check_blocked_event_tags(rules["taxonomies_rules"], event)
+        self.check_event_required_taxonomies(rules["taxonomies_rules"], event)
+        self.check_blocked_event_distribution_levels(rules["blocked_distribution_levels"], event)
+        self.check_blocked_event_sharing_groups_uuids(rules["blocked_sharing_groups_uuids"], event)
+
+    def check_attribute_level_rules(self, rules: dict, attributes: dict) -> None:
+        ctx.log.debug("checking attribute level rules")
         for attribute in attributes:
-            for rule in self.config["block_rules"]:
-                self.check_blocked_attribute_distribution_levels(rule, attribute)
-                self.check_blocked_attribute_sharing_groups_uuids(rule, attribute)
-                self.check_blocked_attribute_types(rule, attribute)
-                self.check_blocked_attribute_categories(rule, attribute)
-                self.check_blocked_attribute_tags(rule, attribute)
+            self.check_blocked_attribute_categories(rules["blocked_attribute_categories"], attribute)
+            self.check_blocked_attribute_types(rules["blocked_attribute_types"], attribute)
+            self.check_blocked_attribute_distribution_levels(rules["blocked_distribution_levels"], attribute)
+            self.check_blocked_attribute_tags(rules["taxonomies_rules"], attribute)
+            self.check_attribute_required_taxonomies(rules["taxonomies_rules"], attribute)
+            self.check_blocked_attribute_sharing_groups_uuids(rules["blocked_sharing_groups_uuids"], attribute)
+
             if "ShadowAttribute" in attribute:
-                self.check_attribute_level_rules(attribute["ShadowAttribute"])
+                self.check_attribute_level_rules(rules, attribute["ShadowAttribute"])
 
-    def check_object_level_rules(self, objects: dict) -> None:
+    def check_object_level_rules(self, rules: dict, objects: dict) -> None:
         for object in objects:
-            for rule in self.config["block_rules"]:
-                self.check_blocked_object_distribution_levels(rule, object)
-                self.check_blocked_object_sharing_groups_uuids(rule, object)
-                self.check_blocked_object_types(rule, object)
+            self.check_blocked_object_distribution_levels(rules["blocked_distribution_levels"], object)
+            self.check_blocked_object_sharing_groups_uuids(rules["blocked_sharing_groups_uuids"], object)
+            self.check_blocked_object_types(rules["blocked_object_types"], object)
+            self.check_attribute_level_rules(rules, object["Attribute"])
 
-            self.check_attribute_level_rules(object["Attribute"])
+    def check_event_required_taxonomies(self, taxonomies_rules: dict, event: dict) -> None:
+        ctx.log.debug("checking required event taxonomies")
 
-    def check_blocked_event_tags(self, rule: dict, event: dict) -> None:
-        if rule["blocked_tags"] and "Tag" in event["Event"]:
+        if len(taxonomies_rules["required_taxonomies"]) == 0:
+            return True
+
+        if not "Tag" in event["Event"]:
+            raise ForbiddenException("event is missing required taxonomies")
+
+        for required_taxonomy in taxonomies_rules["required_taxonomies"]:
+            ctx.log.debug("checking required taxonomy: %s" % required_taxonomy)
+            allowed_tags = taxonomies_rules["allowed_tags"].get(required_taxonomy, [])
+
+            self.check_required_taxonomy_exists(required_taxonomy, event["Event"]["Tag"], allowed_tags)
+
+        return True
+
+    def check_attribute_required_taxonomies(self, taxonomies_rules: dict, attribute: dict) -> None:
+        ctx.log.debug("checking required attribute taxonomies")
+        if len(taxonomies_rules["required_taxonomies"]) == 0:
+            return True
+
+        if not "Tag" in attribute:
+            raise ForbiddenException("attribute is missing required taxonomies")
+
+        for required_taxonomy in taxonomies_rules["required_taxonomies"]:
+            ctx.log.debug("checking required taxonomy: %s" % required_taxonomy)
+            allowed_tags = taxonomies_rules["allowed_tags"].get(required_taxonomy, [])
+
+            self.check_required_taxonomy_exists(required_taxonomy, attribute["Tag"], allowed_tags)
+
+        return True
+
+    def check_required_taxonomy_exists(self, required_taxonomy: str, tags: list, allowed_tags: list = []) -> bool:
+        for tag in tags:
+            if tag["name"].startswith(required_taxonomy + ":"):
+                # if there are allowed tags, check if the tag is allowed
+                # otherwise any tag of this taxonomy is ok
+                if len(allowed_tags) == 0 or tag["name"] in allowed_tags:
+                    return True
+
+        raise ForbiddenException("event is missing required taxonomy: %s" % required_taxonomy)
+
+    def check_blocked_event_tags(self, taxonomies_rules: dict, event: dict) -> None:
+        if "Tag" in event["Event"]:
             for tag in event["Event"]["Tag"]:
-                if tag["name"] in rule["blocked_tags"]:
-                    raise ForbiddenException("event has blocked tag: %s. blocked by rule: %s" %
-                                             (tag["name"], rule["id"]))
+                if tag["name"] in taxonomies_rules["blocked_tags"]:
+                    raise ForbiddenException("event has blocked tag: %s" % tag["name"])
 
-    def check_blocked_event_distribution_levels(self, rule: dict, event: dict) -> None:
-        if event["Event"]["distribution"] in rule["blocked_distribution_levels"]:
-            raise ForbiddenException("event has blocked distribution level: %s. blocked by rule: %s" %
-                                     (event["Event"]["distribution"], rule["id"]))
+    def check_blocked_event_distribution_levels(self, blocked_distribution_levels: list, event: dict) -> None:
+        if event["Event"]["distribution"] in blocked_distribution_levels:
+            raise ForbiddenException("event has blocked distribution level: %s" % event["Event"]["distribution"])
 
-    def check_blocked_event_sharing_groups_uuids(self, rule: dict, event: dict) -> None:
-        if rule["blocked_sharing_groups_uuids"] and "SharingGroup" in event["Event"]:
-            if event["Event"]["SharingGroup"]["uuid"] in rule["blocked_sharing_groups_uuids"]:
-                raise ForbiddenException("event has blocked sharing group uuid: %s. blocked by rule: %s" %
-                                         (event["Event"]["SharingGroup"]["uuid"], rule["id"]))
+    def check_blocked_event_sharing_groups_uuids(self, blocked_sharing_groups_uuids: list, event: dict) -> None:
+        if blocked_sharing_groups_uuids and "SharingGroup" in event["Event"]:
+            if event["Event"]["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+                raise ForbiddenException("event has blocked sharing group uuid: %s" % event["Event"]["SharingGroup"]["uuid"])
 
-    def check_blocked_attribute_tags(self, rule: dict, attribute: dict) -> None:
-        if rule["blocked_tags"] and "Tag" in attribute:
+    def check_blocked_attribute_tags(self, taxonomies_rules: dict, attribute: dict) -> None:
+        if taxonomies_rules["blocked_tags"] and "Tag" in attribute:
             for tag in attribute["Tag"]:
-                if tag["name"] in rule["blocked_tags"]:
-                    raise ForbiddenException("attribute with a blocked tag: %s. blocked by rule: %s" %
-                                             (tag["name"], rule["id"]))
+                if tag["name"] in taxonomies_rules["blocked_tags"]:
+                    raise ForbiddenException("attribute with a blocked tag: %s" % tag["name"])
 
-    def check_blocked_attribute_distribution_levels(self, rule: dict, attribute: dict) -> None:
-        if "distribution" in attribute and attribute["distribution"] in rule["blocked_distribution_levels"]:
-            raise ForbiddenException("attribute with a blocked distribution level: %s. blocked by rule: %s" %
-                                     (attribute["distribution"], rule["id"]))
+    def check_blocked_attribute_distribution_levels(self, blocked_distribution_levels: list, attribute: dict) -> None:
+        if "distribution" in attribute and attribute["distribution"] in blocked_distribution_levels:
+            raise ForbiddenException("attribute with a blocked distribution level: %s" % attribute["distribution"])
 
-    def check_blocked_attribute_sharing_groups_uuids(self, rule: dict, attribute: dict) -> None:
-        if rule["blocked_sharing_groups_uuids"] and "SharingGroup" in attribute:
-            if attribute["SharingGroup"]["uuid"] in rule["blocked_sharing_groups_uuids"]:
-                raise ForbiddenException("attribute with a blocked sharing group uuid: %s. blocked by rule: %s" %
-                                         (attribute["SharingGroup"]["uuid"], rule["id"]))
+    def check_blocked_attribute_sharing_groups_uuids(self, blocked_sharing_groups_uuids: list, attribute: dict) -> None:
+        if "SharingGroup" in attribute:
+            if attribute["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+                raise ForbiddenException("attribute with a blocked sharing group uuid: %s" %
+                                         attribute["SharingGroup"]["uuid"])
 
-    def check_blocked_attribute_types(self, rule: dict, attribute: dict) -> None:
-        if attribute["type"] in rule["blocked_attribute_types"]:
-            raise ForbiddenException("attribute with a blocked type: %s. blocked by rule: %s" %
-                                     (attribute["type"], rule["id"]))
+    def check_blocked_attribute_types(self, blocked_attribute_types: list, attribute: dict) -> None:
+        if attribute["type"] in blocked_attribute_types:
+            raise ForbiddenException("attribute with a blocked type: %s" % attribute["type"])
 
-    def check_blocked_attribute_categories(self, rule: dict, attribute: dict) -> None:
-        if attribute["category"] in rule["blocked_attribute_categories"]:
-            raise ForbiddenException("attribute with a blocked category: %s. blocked by rule: %s" %
-                                     (attribute["category"], rule["id"]))
+    def check_blocked_attribute_categories(self, blocked_attribute_categories: list, attribute: dict) -> None:
+        if attribute["category"] in blocked_attribute_categories:
+            raise ForbiddenException("attribute with a blocked category: %s" % attribute["category"])
 
-    def check_blocked_object_attribute_tags(self, rule: dict, object: dict) -> None:
-        for attribute in object["Attribute"]:
-            self.check_blocked_attribute_tags(rule, attribute)
+    def check_blocked_object_distribution_levels(self, blocked_distribution_levels: list, object: dict) -> None:
+        if object["distribution"] in blocked_distribution_levels:
+            raise ForbiddenException("object with a blocked distribution level: %s" % object["distribution"])
 
-    def check_blocked_object_distribution_levels(self, rule: dict, object: dict) -> None:
-        if object["distribution"] in rule["blocked_distribution_levels"]:
-            raise ForbiddenException("object with a blocked distribution level: %s. blocked by rule: %s" %
-                                     (object["distribution"], rule["id"]))
+    def check_blocked_object_sharing_groups_uuids(self, blocked_sharing_groups_uuids: list, object: dict) -> None:
+        if "SharingGroup" in object:
+            if object["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+                raise ForbiddenException("object with a blocked sharing group uuid: %s" %
+                                         object["SharingGroup"]["uuid"])
 
-    def check_blocked_object_sharing_groups_uuids(self, rule: dict, object: dict) -> None:
-        if rule["blocked_sharing_groups_uuids"] and "SharingGroup" in object:
-            if object["SharingGroup"]["uuid"] in rule["blocked_sharing_groups_uuids"]:
-                raise ForbiddenException("object with a blocked sharing group uuid: %s. blocked by rule: %s" %
-                                         (object["SharingGroup"]["uuid"], rule["id"]))
+    def check_blocked_object_types(self, blocked_object_types: list, object: dict) -> None:
+        if object["name"] in blocked_object_types:
+            raise ForbiddenException("object with a blocked type: %s" % object["name"])
 
-    def check_blocked_object_types(self, rule: dict, object: dict) -> None:
-        if object["name"] in rule["blocked_object_types"]:
-            raise ForbiddenException("object with a blocked type: %s. blocked by rule: %s" %
-                                     (object["name"], rule["id"]))
-
-    def forbidden(self, flow: http.HTTPFlow, message: str = "endpoint not allowed") -> None:
+    def forbidden(self, flow: MISPHTTPFlow, message: str = "endpoint not allowed") -> None:
         ctx.log.error("request blocked: [%s]%s - %s" % (flow.request.method, flow.request.path, message))
         flow.response = http.Response.make(403, b"Forbidden", {"Content-Type": "text/plain"})
 
-    def is_external_request(self, flow: http.HTTPFlow) -> bool:
-        ctx.log.debug("received request - [%s]%s" % (flow.request.method, flow.request.path))
-        return flow.request.host == self.config["proxy"]["host"] and flow.request.port == self.config["proxy"]["port"]
+    def get_src_instance_id(self, flow: http.HTTPFlow) -> str:
+        if flow.client_conn.peername[0] not in self.config["instances_host_mapping"]:
+            raise ForbiddenException("source host does not exist in instances hosts mapping")
+
+        return self.config["instances_host_mapping"][flow.client_conn.peername[0]]
+
+    def get_dst_instance_id(self, flow: http.HTTPFlow) -> str:
+        if flow.request.host not in self.config["instances_host_mapping"]:
+            raise ForbiddenException("destination host does not exist in instances hosts mapping")
+
+        return self.config["instances_host_mapping"][flow.request.host]
+
+    @lru_cache
+    def can_reach_compartment(self, flow: MISPHTTPFlow) -> bool:
+        ctx.log.debug("compartment reach check - src: %s, dst: %s" % (flow.src_compartment_id, flow.dst_compartment_id))
+
+        if flow.dst_compartment_id in self.config["compartments_rules"]["can_reach"][flow.src_compartment_id]:
+            return True
+
+        ctx.log.error("request blocked: [%s]%s - %s" %
+                      (flow.request.method, flow.request.path, "cannot reach compartment"))
+        return False
+
+    @lru_cache
+    def is_allowed_endpoint(self, method: str, path: str) -> bool:
+        for endpoint in self.allowed_endpoints:
+            if re.match(endpoint["regex"], path) and method in endpoint["methods"]:
+                return True
+
+        return False
 
     def get_event_from_message(self, message: http.Message) -> dict:
         if message.content is None:

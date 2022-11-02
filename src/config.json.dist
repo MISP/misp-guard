@@ -1,22 +1,56 @@
 {
-    "proxy": {
-        "host": "misp-guard.com",
-        "port": 8888
+    "compartments_rules": {
+        "can_reach": {
+            "compartment_1": [
+                "compartment_1",
+                "compartment_2"
+            ],
+            "compartment_2": [
+                "compartment_1",
+                "compartment_2"
+            ]
+        }
     },
-    "misp": {
-        "host": "misp-internal.local",
-        "port": 443
-    },
-    "block_rules": [
-        {
-            "id": "no-rules",
-            "description": "Empty rule",
-            "blocked_tags": [],
+    "instances": {
+        "instance_1_1": {
+            "ip": "10.0.0.1",
+            "host": "instance1-comp1.com",
+            "port": 443,
+            "compartment_id": "compartment_1",
+            "affiliation": "",
+            "taxonomies_rules": {
+                "required_taxonomies": [],
+                "allowed_tags": {},
+                "blocked_tags": []
+            },
+            "blocked_distribution_levels": [],
+            "blocked_sharing_groups_uuids": [],
+            "blocked_attribute_types": [],
+            "blocked_attribute_categories": [],
+            "blocked_object_types": []
+        },
+        "instance_1_2": {
+            "ip": "20.0.0.1",
+            "host": "instance1-comp2.com",
+            "port": 443,
+            "compartment_id": "compartment_2",
+            "affiliation": "",
+            "taxonomies_rules": {
+                "required_taxonomies": [],
+                "allowed_tags": {},
+                "blocked_tags": []
+            },
             "blocked_distribution_levels": [],
             "blocked_sharing_groups_uuids": [],
             "blocked_attribute_types": [],
             "blocked_attribute_categories": [],
             "blocked_object_types": []
         }
-    ]
+    },
+    "instances_host_mapping": {
+        "instance1-comp2.com": "instance_2_1",
+        "20.0.0.1": "instance_1_2",
+        "instance2-comp2.com": "instance_2_2",
+        "20.0.0.2": "instance_2_2"
+    }
 }

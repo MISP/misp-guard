@@ -78,6 +78,105 @@ class TestMispGuard:
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
+    async def test_whitelisted_domain_from_unknown_src_is_blocked(self, caplog):
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+        test_path="/torlist/?exit"
+
+        event_view_req = tutils.treq(
+            port=443,
+            host="snort-org-site.s3.amazonaws.com",
+            path=test_path,
+            method=b"GET",
+        )
+
+        flow = tflow.tflow(req=event_view_req)
+        flow.client_conn.peername = ("123.123.123.123", "123")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "source host does not exist in instances hosts mapping" in caplog.text
+        assert "request blocked: [GET]" + test_path +  " - source host does not exist in instances hosts mapping" in caplog.text
+        assert flow.response.status_code == 403
+
+
+    @pytest.mark.asyncio
+    async def test_whitelisted_domain_from_known_src_is_allowed(self, caplog):
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        event_view_req = tutils.treq(
+            port=443,
+            host="snort-org-site.s3.amazonaws.com",
+            path="/test.txt",
+            method=b"GET",
+        )
+
+        event_view_resp = tutils.tresp(
+            status_code=200
+        )
+
+        flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "request from whitelisted url - skipping further processing" in caplog.text
+        assert "response from whitelisted url - skipping further processing" in caplog.text
+        assert flow.response.status_code == 200
+
+
+    @pytest.mark.asyncio
+    async def test_whitelisted_url_from_unknown_src_is_blocked(self, caplog):
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+        test_path="/torlist/?exit"
+
+        event_view_req = tutils.treq(
+            port=443,
+            host="www.dan.me.uk",
+            path=test_path,
+            method=b"GET",
+        )
+
+        flow = tflow.tflow(req=event_view_req)
+        flow.client_conn.peername = ("123.123.123.123", "123")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "source host does not exist in instances hosts mapping" in caplog.text
+        assert "request blocked: [GET]" + test_path +  " - source host does not exist in instances hosts mapping" in caplog.text
+        assert flow.response.status_code == 403
+
+
+    @pytest.mark.asyncio
+    async def test_whitelisted_url_from_known_src_is_allowed(self, caplog):
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        event_view_req = tutils.treq(
+            port=443,
+            host="www.dan.me.uk",
+            path="/torlist/?exit",
+            method=b"GET",
+        )
+
+        event_view_resp = tutils.tresp(
+            status_code=200
+        )
+
+        flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "request from whitelisted url - skipping further processing" in caplog.text
+        assert "response from whitelisted url - skipping further processing" in caplog.text
+        assert flow.response.status_code == 200
+
+    @pytest.mark.asyncio
     async def test_pull_event_head_passthrough(self):
         mispguard = self.load_mispguard()
 

@@ -128,32 +128,69 @@ class MispGuard:
         loader.add_option("config", str, "", "MISP Guard configuration file")
 
     def request(self, flow: http.HTTPFlow) -> None:
-        try:
-            flow = self.enrich_flow(flow)
-            if self.can_reach_compartment(flow) and self.is_allowed_endpoint(flow.request.method, flow.request.path):
-                return self.process_request(flow)
-        except ForbiddenException as ex:
-            logger.error(ex)
-            return self.forbidden(flow, str(ex))
-        except Exception as ex:
-            logger.error(ex)
-            return self.forbidden(flow, "unexpected error, rejecting request")
+        if (not (self.url_is_whitelisted(flow) or self.domain_is_whitelisted(flow))) :
+            try:  
+                flow = self.enrich_flow(flow)
+                if self.can_reach_compartment(flow) and self.is_allowed_endpoint(flow.request.method, flow.request.path):
+                    return self.process_request(flow)
+            except ForbiddenException as ex:
+                logger.error(ex)
+                return self.forbidden(flow, str(ex))
+            except Exception as ex:
+                logger.error(ex)
+                return self.forbidden(flow, "unexpected error, rejecting request")
 
-        # filter out requests to the allowed endpoints
-        logger.error("rejecting non allowed request to %s" % flow.request.path)
-        return self.forbidden(flow)
+            # filter out requests to the allowed endpoints
+            logger.error("rejecting non allowed request to %s" % flow.request.path)
+            return self.forbidden(flow)
+        else:
+            try:  
+                if self.src_instance_is_allowed(flow):
+                    logger.info("request from whitelisted url - skipping further processing")
+            except ForbiddenException as ex:
+                logger.error(ex)
+                return self.forbidden(flow, str(ex))
+            except Exception as ex:
+                logger.error(ex)
+                return self.forbidden(flow, "unexpected error, rejecting request")
+            
 
     def response(self,  flow: http.HTTPFlow) -> None:
-        try:
-            flow = self.enrich_flow(flow)
-            if self.can_reach_compartment(flow):
-                return self.process_response(flow)
-        except ForbiddenException as ex:
-            logger.error(ex)
-            return self.forbidden(flow, str(ex))
-        except Exception as ex:
-            logger.error(ex)
-            return self.forbidden(flow, "unexpected error, rejecting response")
+        if (not (self.url_is_whitelisted(flow) or self.domain_is_whitelisted(flow))):
+            try:
+                flow = self.enrich_flow(flow)
+                if self.can_reach_compartment(flow):
+                    return self.process_response(flow)
+            except ForbiddenException as ex:
+                logger.error(ex)
+                return self.forbidden(flow, str(ex))
+            except Exception as ex:
+                logger.error(ex)
+                return self.forbidden(flow, "unexpected error, rejecting response")
+        else:
+            try:
+                if  self.src_instance_is_allowed(flow):
+                    logger.info("response from whitelisted url - skipping further processing")
+            except ForbiddenException as ex:
+                logger.error(ex)
+                return self.forbidden(flow, str(ex))
+            except Exception as ex:
+                logger.error(ex)
+                return self.forbidden(flow, "unexpected error, rejecting response")
+            
+    
+    def url_is_whitelisted(self, flow: http.HTTPFlow) -> bool:
+        if flow.request.url in self.config["whitelisting"]["urls"]:
+            return True
+        else:
+            return False
+    
+    def domain_is_whitelisted(self, flow: http.HTTPFlow) -> bool:
+        if flow.request.host in self.config["whitelisting"]["domains"]:
+            return True
+        else:
+            return False
+
 
     def enrich_flow(self, flow: http.HTTPFlow) -> MISPHTTPFlow:
         logger.debug("enriching http flow")
@@ -395,6 +432,12 @@ class MispGuard:
             raise ForbiddenException("source host does not exist in instances hosts mapping")
 
         return self.config["instances_host_mapping"][flow.client_conn.peername[0]]
+    
+    def src_instance_is_allowed(self, flow: http.HTTPFlow) -> bool:
+        if flow.client_conn.peername[0] not in self.config["instances_host_mapping"]:
+            raise ForbiddenException("source host does not exist in instances hosts mapping")
+        
+        return True
 
     def get_dst_instance_id(self, flow: http.HTTPFlow) -> str:
         if flow.request.host not in self.config["instances_host_mapping"]:

@@ -1,7 +1,7 @@
 # misp-guard
 `misp-guard` is a [mitmproxy](https://mitmproxy.org/) addon that inspects the synchronization traffic (via `PUSH` or `PULL`) between different MISP instances and applies a set of customizable rules defined in a JSON file.
 
-> **NOTE: By default this addon will block all outgoing HTTP requests that are not required during a MISP server sync.**
+> **NOTE: By default this addon will block all outgoing HTTP requests that are not required during a MISP server sync. However, individual URLs or domains can be allowed if necessary.**
 
 ## PUSH
 ```mermaid
@@ -93,6 +93,12 @@ sequenceDiagram
 * `blocked_attribute_types`: Blocks if the event contains an attribute matching one of this types.
 * `blocked_attribute_categories`: Blocks if the event contains an attribute matching one of this categories.
 * `blocked_object_types`: Blocks if the event contains an object matching one of this types.
+
+**Allowlist**
+
+* To allow individual URLs or domains, simply add them as a JSON array under the `allowlist` element.
+  * `urls` The entire URL is checked and only exact calls are allowed.
+  * `domains` In contrast, only the domain is checked and any website behind the domain can be queried. Should only be used if adding exact URLs is not possible.
 
 See sample config [here](src/test/test_config.json).
 

@@ -1,4 +1,12 @@
 {
+    "allowlist": {
+        "urls":  [
+                "http://www.dan.me.uk:443/torlist/?exit"
+        ],
+        "domains": [
+            "snort-org-site.s3.amazonaws.com"
+        ]
+    },
     "compartments_rules": {
         "can_reach": {
             "compartment_1": [

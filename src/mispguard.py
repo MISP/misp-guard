@@ -128,7 +128,7 @@ class MispGuard:
         loader.add_option("config", str, "", "MISP Guard configuration file")
 
     def request(self, flow: http.HTTPFlow) -> None:
-        if (not (self.url_is_whitelisted(flow) or self.domain_is_whitelisted(flow))) :
+        if (not (self.url_is_allowed(flow) or self.domain_is_allowed(flow))) :
             try:  
                 flow = self.enrich_flow(flow)
                 if self.can_reach_compartment(flow) and self.is_allowed_endpoint(flow.request.method, flow.request.path):
@@ -146,7 +146,7 @@ class MispGuard:
         else:
             try:  
                 if self.src_instance_is_allowed(flow):
-                    logger.info("request from whitelisted url - skipping further processing")
+                    logger.info("request from allowed url - skipping further processing")
             except ForbiddenException as ex:
                 logger.error(ex)
                 return self.forbidden(flow, str(ex))
@@ -156,7 +156,7 @@ class MispGuard:
             
 
     def response(self,  flow: http.HTTPFlow) -> None:
-        if (not (self.url_is_whitelisted(flow) or self.domain_is_whitelisted(flow))):
+        if (not (self.url_is_allowed(flow) or self.domain_is_allowed(flow))):
             try:
                 flow = self.enrich_flow(flow)
                 if self.can_reach_compartment(flow):
@@ -170,7 +170,7 @@ class MispGuard:
         else:
             try:
                 if  self.src_instance_is_allowed(flow):
-                    logger.info("response from whitelisted url - skipping further processing")
+                    logger.info("response from allowed url - skipping further processing")
             except ForbiddenException as ex:
                 logger.error(ex)
                 return self.forbidden(flow, str(ex))
@@ -179,14 +179,14 @@ class MispGuard:
                 return self.forbidden(flow, "unexpected error, rejecting response")
             
     
-    def url_is_whitelisted(self, flow: http.HTTPFlow) -> bool:
-        if flow.request.url in self.config["whitelisting"]["urls"]:
+    def url_is_allowed(self, flow: http.HTTPFlow) -> bool:
+        if flow.request.url in self.config["allowlist"]["urls"]:
             return True
         else:
             return False
     
-    def domain_is_whitelisted(self, flow: http.HTTPFlow) -> bool:
-        if flow.request.host in self.config["whitelisting"]["domains"]:
+    def domain_is_allowed(self, flow: http.HTTPFlow) -> bool:
+        if flow.request.host in self.config["allowlist"]["domains"]:
             return True
         else:
             return False

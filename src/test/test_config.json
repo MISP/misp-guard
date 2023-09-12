@@ -1,5 +1,5 @@
 {
-    "whitelisting": {
+    "allowlist": {
         "urls":  [
                 "http://www.dan.me.uk:443/torlist/?exit"
         ],

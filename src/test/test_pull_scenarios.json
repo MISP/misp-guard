@@ -442,5 +442,35 @@
         "event_fixture_file": "./test/fixtures/test_event_non-blocked_required_allowed_tag.json",
         "expected_status_code": 200,
         "expected_logs": []
+    },
+    {
+        "name": "pull_galaxy_blocked_distribution_evel",
+        "host": "instance1-comp4.com",
+        "port": 443,
+        "url": "/galaxy_clusters/view/8faab056-4212-4e80-8b54-b7eadec6b739",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "event_fixture_file": "./test/fixtures/test_galaxy_cluster_blocked_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [GET]/galaxy_clusters/view/8faab056-4212-4e80-8b54-b7eadec6b739 - galaxy cluster has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "pull_galaxy_blocked_distribution_evel",
+        "host": "instance1-comp4.com",
+        "port": 443,
+        "url": "/galaxy_clusters/view/8faab056-4212-4e80-8b54-b7eadec6b739",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "event_fixture_file": "./test/fixtures/test_galaxy_cluster_non-blocked_distribution.json",
+        "expected_status_code": 200,
+        "expected_logs": []
     }
 ]

@@ -34,6 +34,7 @@ class MISPHTTPFlow(http.HTTPFlow):
     is_event_index: bool = False
     is_pull: bool = False
     is_push: bool = False
+    is_galaxy: bool = False
 
 
 class MispGuard:
@@ -96,6 +97,24 @@ class MispGuard:
             },
             {
                 "regex": r"^\/shadow_attributes\/index.*$",
+                "methods": [
+                    "GET"
+                ]
+            },
+            {
+                "regex": r"^\/galaxies/pushCluster$",
+                "methods": [
+                    "POST"
+                ]
+            },
+            {
+                "regex": r"^\/galaxy_clusters\/restSearch$",
+                "methods": [
+                    "POST"
+                ]
+            },
+            {
+                "regex": r"^\/galaxy_clusters\/view\/[\w\-]{36}$",
                 "methods": [
                     "GET"
                 ]
@@ -216,13 +235,21 @@ class MispGuard:
             flow.is_push = True
             flow.is_event_index = True
 
+        if "/galaxies/pushCluster" in flow.request.path:
+            flow.is_push = True
+            flow.is_galaxy = True
+
+        if "/galaxy_clusters/restSearch" in flow.request.path or "/galaxy_clusters/view" in flow.request.path:
+            flow.is_pull = True
+            flow.is_galaxy = True
+
         return flow
 
     def process_request(self, flow: MISPHTTPFlow) -> None:
         logger.debug("processing request")
         logger.info("received request - [%s]%s" % (flow.request.method, flow.request.path))
 
-        if flow.is_event and flow.is_push:
+        if flow.is_push and flow.is_event:
             try:
                 event = self.get_event_from_message(flow.request)
             except Exception as ex:
@@ -232,12 +259,27 @@ class MispGuard:
             rules = self.get_rules(flow)
             return self.process_event(rules, event, flow)
 
-        if flow.is_event_index:
+        if flow.is_push and flow.is_event_index:
             params = flow.request.json()
 
             if "minimal" not in params or params["minimal"] != 1 or "published" not in params or params["published"] != 1:
                 raise ForbiddenException(
                     "{'minimal': 1, 'published': 1} is required for /events/index requests")
+
+        if flow.is_push and flow.is_galaxy:
+            try:
+                galaxy = flow.request.json()
+            except Exception as ex:
+                return self.forbidden(flow, str(ex))
+
+            rules = self.get_rules(flow)
+            return self.process_galaxy_clusters(rules, galaxy, flow)
+
+        if flow.is_pull and "/galaxy_clusters/restSearch" in flow.request.path:
+            params = flow.request.json()
+            if "minimal" not in params or params["minimal"] != 1 or "published" not in params or params["published"] != 1:
+                raise ForbiddenException(
+                    "{'minimal': 1, 'published': 1} is required for /galaxy_clusters/restSearch requests")
 
     def process_response(self, flow: MISPHTTPFlow) -> None:
         logger.debug("processing response")
@@ -269,6 +311,15 @@ class MispGuard:
             rules = self.get_rules(flow)
             return self.process_shadow_attributes(rules, shadow_attributes, flow)
 
+        if flow.is_pull and flow.is_galaxy and "/galaxy_clusters/view" in flow.request.path:
+            try:
+                galaxy_cluster = self.get_galaxy_cluster_from_message(flow.response)
+            except Exception as ex:
+                return self.forbidden(flow, str(ex))
+
+            rules = self.get_rules(flow)
+            return self.process_galaxy_cluster(rules, galaxy_cluster, flow)
+
     def get_rules(self, flow: MISPHTTPFlow) -> list:
         logger.debug("getting misp-guard instance rules")
         rules = {}
@@ -295,6 +346,23 @@ class MispGuard:
 
         try:
             self.check_attribute_level_rules(rules, shadow_attributes)
+        except ForbiddenException as ex:
+            return self.forbidden(flow, str(ex))
+
+    def process_galaxy_clusters(self, rules: dict, galaxy_clusters: dict, flow: MISPHTTPFlow) -> None:
+        logger.debug("processing galaxy clusters")
+
+        for galaxy_cluster in galaxy_clusters:
+            try:
+                self.check_blocked_galaxy_distribution_levels(rules["blocked_distribution_levels"], galaxy_cluster)
+            except ForbiddenException as ex:
+                return self.forbidden(flow, str(ex))
+
+    def process_galaxy_cluster(self, rules: dict, galaxy_cluster: dict, flow: MISPHTTPFlow) -> None:
+        logger.debug("processing galaxy cluster")
+
+        try:
+            self.check_blocked_galaxy_distribution_levels(rules["blocked_distribution_levels"], galaxy_cluster)
         except ForbiddenException as ex:
             return self.forbidden(flow, str(ex))
 
@@ -423,25 +491,29 @@ class MispGuard:
         if object["name"] in blocked_object_types:
             raise ForbiddenException("object with a blocked type: %s" % object["name"])
 
+    def check_blocked_galaxy_distribution_levels(self, blocked_distribution_levels: list, galaxy_cluster: dict) -> None:
+        if galaxy_cluster["GalaxyCluster"]["distribution"] in blocked_distribution_levels:
+            raise ForbiddenException("galaxy cluster has blocked distribution level: %s" % galaxy_cluster["GalaxyCluster"]["distribution"])
+
     def forbidden(self, flow: MISPHTTPFlow, message: str = "endpoint not allowed") -> None:
         logger.error("request blocked: [%s]%s - %s" % (flow.request.method, flow.request.path, message))
         flow.response = http.Response.make(403, b"Forbidden", {"Content-Type": "text/plain"})
 
     def get_src_instance_id(self, flow: http.HTTPFlow) -> str:
         if flow.client_conn.peername[0] not in self.config["instances_host_mapping"]:
-            raise ForbiddenException("source host does not exist in instances hosts mapping")
+            raise ForbiddenException("source host %s does not exist in instances hosts mapping" % flow.client_conn.peername[0])
 
         return self.config["instances_host_mapping"][flow.client_conn.peername[0]]
     
     def src_instance_is_allowed(self, flow: http.HTTPFlow) -> bool:
         if flow.client_conn.peername[0] not in self.config["instances_host_mapping"]:
-            raise ForbiddenException("source host does not exist in instances hosts mapping")
+            raise ForbiddenException("source host %s does not exist in instances hosts mapping" % flow.client_conn.peername[0])
         
         return True
 
     def get_dst_instance_id(self, flow: http.HTTPFlow) -> str:
         if flow.request.host not in self.config["instances_host_mapping"]:
-            raise ForbiddenException("destination host does not exist in instances hosts mapping")
+            raise ForbiddenException("destination host %s does not exist in instances hosts mapping" % flow.request.host)
 
         return self.config["instances_host_mapping"][flow.request.host]
 
@@ -476,6 +548,14 @@ class MispGuard:
             raise Exception("invalid JSON body")
 
     def get_shadow_attributes_from_message(self, message: http.Message) -> dict:
+        if message.content is None:
+            return Exception("empty message body")
+        try:
+            return message.json()
+        except json.decoder.JSONDecodeError:
+            raise Exception("invalid JSON body")
+
+    def get_galaxy_cluster_from_message(self, message: http.Message) -> dict:
         if message.content is None:
             return Exception("empty message body")
         try:

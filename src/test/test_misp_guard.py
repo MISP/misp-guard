@@ -57,6 +57,32 @@ class TestMispGuard:
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
+    async def test_reject_non_minimal_galaxy_clusters_rest_search(self, caplog):
+        """
+        Test that when requesting /galaxy_clusters/restSearch endpoint, the request is rejected if the search filter minimal:1 is not set.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        events_index_req = tutils.treq(
+            port=443,
+            host="instance1-comp1.com",
+            path="/galaxy_clusters/restSearch",
+            method=b"POST",
+            headers=Headers(content_type="application/json"),
+            content=b"{\"minimal\":0, \"published\":1}",
+        )
+
+        flow = tflow.tflow(req=events_index_req)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "{'minimal': 1, 'published': 1} is required for /galaxy_clusters/restSearch requests" in caplog.text
+        assert "request blocked: [POST]/galaxy_clusters/restSearch - {'minimal': 1, 'published': 1} is required for /galaxy_clusters/restSearch requests" in caplog.text
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
     async def test_non_allowed_endpoint_is_blocked(self, caplog):
         caplog.set_level("INFO")
         mispguard = self.load_mispguard()
@@ -95,8 +121,8 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "source host does not exist in instances hosts mapping" in caplog.text
-        assert "request blocked: [GET]" + test_path +  " - source host does not exist in instances hosts mapping" in caplog.text
+        assert "source host 123.123.123.123 does not exist in instances hosts mapping" in caplog.text
+        assert "request blocked: [GET]" + test_path +  " - source host 123.123.123.123 does not exist in instances hosts mapping" in caplog.text
         assert flow.response.status_code == 403
 
 
@@ -145,8 +171,8 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "source host does not exist in instances hosts mapping" in caplog.text
-        assert "request blocked: [GET]" + test_path +  " - source host does not exist in instances hosts mapping" in caplog.text
+        assert "source host 123.123.123.123 does not exist in instances hosts mapping" in caplog.text
+        assert "request blocked: [GET]" + test_path +  " - source host 123.123.123.123 does not exist in instances hosts mapping" in caplog.text
         assert flow.response.status_code == 403
 
 
@@ -241,7 +267,7 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - source host does not exist in instances hosts mapping" in caplog.text
+        assert "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - source host 90.0.0.1 does not exist in instances hosts mapping" in caplog.text
 
         assert flow.response.status_code == 403
 
@@ -262,7 +288,7 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - destination host does not exist in instances hosts mapping" in caplog.text
+        assert "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - destination host instance99-comp1.com does not exist in instances hosts mapping" in caplog.text
 
         assert flow.response.status_code == 403
 

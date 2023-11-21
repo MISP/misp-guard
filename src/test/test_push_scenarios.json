@@ -724,5 +724,19 @@
         "fixture_file": "./test/fixtures/test_galaxy_clusters_non-blocked_distribution.json",
         "expected_status_code": 200,
         "expected_logs": []
+    },
+    {
+        "name": "push_sightings_non-blocked",
+        "host": "instance1-comp4.com",
+        "port": 443,
+        "url": "/sightings/bulkSaveSightings/5e168365-4391-44bd-851a-b48a14c30d77",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/empty.json",
+        "expected_status_code": 200,
+        "expected_logs": []
     }
 ]

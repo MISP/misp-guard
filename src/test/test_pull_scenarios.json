@@ -460,7 +460,7 @@
         ]
     },
     {
-        "name": "pull_galaxy_blocked_distribution_evel",
+        "name": "pull_galaxy_non-blocked_distribution_level",
         "host": "instance1-comp4.com",
         "port": 443,
         "url": "/galaxy_clusters/view/8faab056-4212-4e80-8b54-b7eadec6b739",
@@ -470,6 +470,20 @@
             "port": 22
         },
         "fixture_file": "./test/fixtures/test_galaxy_cluster_non-blocked_distribution.json",
+        "expected_status_code": 200,
+        "expected_logs": []
+    },
+    {
+        "name": "pull_sightings_non-blocked",
+        "host": "instance1-comp4.com",
+        "port": 443,
+        "url": "/sightings/restSearch/event",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/empty.json",
         "expected_status_code": 200,
         "expected_logs": []
     }

@@ -46,6 +46,14 @@ sequenceDiagram
     MISP A->>MISP Guard: [POST]/galaxies/pushCluster
     MISP Guard->>MISP B: [POST]/galaxies/pushCluster
     end
+
+    rect rgb(191, 223, 255)
+    MISP B->>+MISP Guard: [POST]/sightings/bulkSaveSightings/[UUID]
+    note right of MISP Guard: Outgoing Sightings are inspected and rejected with 403 if any block rule matches
+    MISP Guard->>-MISP A: [POST]/sightings/bulkSaveSightings/[UUID]
+    MISP A->>MISP Guard: [POST]/sightings/bulkSaveSightings/[UUID]
+    MISP Guard->>MISP B: [POST]/sightings/bulkSaveSightings/[UUID]
+    end
 ```
 
 ## PULL
@@ -69,13 +77,13 @@ sequenceDiagram
     MISP A->>MISP Guard: [GET]/events/view/[UUID]
     MISP Guard->>MISP B: [GET]/events/view/[UUID]
     MISP B->>+MISP Guard: [GET]/events/view/[UUID]
-    note right of MISP Guard: Outgoing Event is inspected and rejected with 403 if any block rule matches
+    note right of MISP Guard: Incoming Event is inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/events/view/[UUID]
 
     MISP A->>MISP Guard: [GET]/shadow_attributes/index
     MISP Guard->>MISP B: [GET]/shadow_attributes/index
     MISP B->>+MISP Guard: [GET]/shadow_attributes/index
-    note right of MISP Guard: Outgoing Shadow Attributes are inspected and rejected with 403 if any block rule matches
+    note right of MISP Guard: Incoming Shadow Attributes are inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/shadow_attributes/index
 
     MISP A->>+MISP Guard: [POST]/galaxy_clusters/restSearch
@@ -87,8 +95,14 @@ sequenceDiagram
     MISP A->>MISP Guard: [GET]/galaxy_clusters/view/[UUID]
     MISP Guard->>MISP B: [GET]/galaxy_clusters/view/[UUID]
     MISP B->>+MISP Guard: [GET]/galaxy_clusters/view/[UUID]
-    note right of MISP Guard: Outgoing Galaxy Cluster is inspected and rejected with 403 if any block rule matches
+    note right of MISP Guard: Incoming Galaxy Cluster is inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/galaxy_clusters/view/[UUID]
+
+    MISP A->>MISP Guard: [POST]/sightings/restSearch/event
+    MISP Guard->>MISP B: [POST]/sightings/restSearch/event
+    MISP B->>+MISP Guard: [POST]/sightings/restSearch/event
+    note right of MISP Guard: Incoming Sightings are inspected and rejected with 403 if any block rule matches
+    MISP Guard->>-MISP A: [POST]/sightings/restSearch/event
 ```
 
 
@@ -136,7 +150,7 @@ $ pip install -r requirements.txt
 1. Define your block rules in the `config.json` file.
 2. Start mitmproxy with the `mispguard` addon:
     ```
-    $ mitmdump -s mispguard.py -p 8888 --certs *=cert.pem --set config=config.json 
+    $ mitmdump -s mispguard.py -p 8888 --certs *=cert.pem --set config=config.json
     Loading script mispguard.py
     MispGuard initialized
     Proxy server listening at *:8888

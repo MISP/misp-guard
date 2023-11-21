@@ -38,6 +38,14 @@ sequenceDiagram
     MISP A->>MISP Guard: [POST]/events/edit/[UUID]
     MISP Guard->>MISP B: [POST]/events/edit/[UUID]
     end
+
+    rect rgb(191, 223, 255)
+    MISP B->>+MISP Guard: [POST]/galaxies/pushCluster
+    note right of MISP Guard: Outgoing Galaxy Cluster is inspected and rejected with 403 if any block rule matches
+    MISP Guard->>-MISP A: [POST]/galaxies/pushCluster
+    MISP A->>MISP Guard: [POST]/galaxies/pushCluster
+    MISP Guard->>MISP B: [POST]/galaxies/pushCluster
+    end
 ```
 
 ## PULL
@@ -69,6 +77,18 @@ sequenceDiagram
     MISP B->>+MISP Guard: [GET]/shadow_attributes/index
     note right of MISP Guard: Outgoing Shadow Attributes are inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/shadow_attributes/index
+
+    MISP A->>+MISP Guard: [POST]/galaxy_clusters/restSearch
+    note right of MISP Guard: Only `minimal` search requests to /galaxy_clusters/restSearch are allowed
+    MISP Guard->>-MISP B: [POST]/galaxy_clusters/restSearch
+    MISP B->>MISP Guard: [POST]/galaxy_clusters/restSearch
+    MISP Guard->>MISP A: [POST]/galaxy_clusters/restSearch
+
+    MISP A->>MISP Guard: [GET]/galaxy_clusters/view/[UUID]
+    MISP Guard->>MISP B: [GET]/galaxy_clusters/view/[UUID]
+    MISP B->>+MISP Guard: [GET]/galaxy_clusters/view/[UUID]
+    note right of MISP Guard: Outgoing Galaxy Cluster is inspected and rejected with 403 if any block rule matches
+    MISP Guard->>-MISP A: [GET]/galaxy_clusters/view/[UUID]
 ```
 
 

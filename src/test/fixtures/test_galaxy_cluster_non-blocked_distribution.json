@@ -1,0 +1,59 @@
+{
+    "GalaxyCluster": {
+        "id": "1",
+        "uuid": "8faab056-4212-4e80-8b54-b7eadec6b739",
+        "collection_uuid": "",
+        "type": "test-galaxy",
+        "value": "test value",
+        "tag_name": "",
+        "description": "Test Galaxy Cluster",
+        "galaxy_id": "1",
+        "source": "",
+        "authors": [],
+        "version": "1",
+        "distribution": "3",
+        "sharing_group_id": null,
+        "org_id": "1",
+        "orgc_id": "1",
+        "default": false,
+        "locked": false,
+        "extends_uuid": "57d4aa66-a73f-4c9e-aa3e-712b23fd6d9a",
+        "extends_version": "1",
+        "published": true,
+        "deleted": false,
+        "Galaxy": {
+            "id": "1",
+            "uuid": "c5f2dfb4-21a1-42d8-a452-1d3c36a204ff",
+            "name": "Test Galaxy",
+            "type": "test-galaxy",
+            "description": "Test Galaxy",
+            "version": "1",
+            "icon": "map",
+            "namespace": "test-galaxy",
+            "enabled": true,
+            "local_only": false,
+            "kill_chain_order": {}
+        },
+        "GalaxyElement": [
+            {
+                "id": "1",
+                "galaxy_cluster_id": "1",
+                "key": "test",
+                "value": "element"
+            }
+        ],
+        "GalaxyClusterRelation": [],
+        "Org": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "Orgc": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        }
+    }
+}

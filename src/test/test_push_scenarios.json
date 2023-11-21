@@ -9,7 +9,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_tags.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - event has blocked tag: tlp:red"
@@ -25,7 +25,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_tags.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - event has blocked tag: tlp:red"
@@ -41,7 +41,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked tag: tlp:red"
@@ -57,7 +57,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked tag: tlp:red"
@@ -73,7 +73,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_tags.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_attribute_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked tag: tlp:red"
@@ -89,7 +89,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked tag: tlp:red"
@@ -105,7 +105,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_event_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_event_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - event has blocked distribution level: 0"
@@ -121,7 +121,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_tags.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked tag: tlp:red"
@@ -137,7 +137,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked distribution level: 0"
@@ -153,7 +153,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_event_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_event_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - event has blocked distribution level: 0"
@@ -169,7 +169,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - object with a blocked distribution level: 0"
@@ -185,7 +185,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked distribution level: 0"
@@ -201,7 +201,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_attribute_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked distribution level: 0"
@@ -217,7 +217,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - object with a blocked distribution level: 0"
@@ -233,7 +233,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_sharing_group.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - event has blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
@@ -249,7 +249,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_attribute_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked distribution level: 0"
@@ -265,7 +265,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_sharing_group.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
@@ -281,7 +281,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_sharing_group.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - event has blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
@@ -297,7 +297,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_sharing_group.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - object with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
@@ -313,7 +313,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_sharing_group.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
@@ -329,7 +329,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_sharing_group.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_attribute_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
@@ -345,7 +345,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_sharing_group.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - object with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
@@ -361,7 +361,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_category.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_category.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked category: Person"
@@ -377,7 +377,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_sharing_group.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_attribute_sharing_group.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked sharing group uuid: b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
@@ -393,7 +393,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_type.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_type.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked type: passport-number"
@@ -409,7 +409,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_type.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_type.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked type: passport-number"
@@ -425,7 +425,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_attribute_category.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_attribute_category.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked category: Person"
@@ -441,7 +441,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_attribute_category.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_category.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked category: Person"
@@ -457,7 +457,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_type.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_type.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - object with a blocked type: person"
@@ -473,7 +473,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_type.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_type.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - object with a blocked type: person"
@@ -489,7 +489,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_shadow_attribute_type.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_shadow_attribute_type.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - attribute with a blocked type: passport-number"
@@ -505,7 +505,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_object_shadow_attribute_type.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_object_shadow_attribute_type.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - attribute with a blocked type: passport-number"
@@ -521,7 +521,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_non-blocked.json",
+        "fixture_file": "./test/fixtures/test_event_non-blocked.json",
         "expected_status_code": 200,
         "expected_logs": []
     },
@@ -535,7 +535,7 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_non-blocked.json",
+        "fixture_file": "./test/fixtures/test_event_non-blocked.json",
         "expected_status_code": 200,
         "expected_logs": []
     },
@@ -549,7 +549,7 @@
             "ip": "30.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_non-blocked.json",
+        "fixture_file": "./test/fixtures/test_event_non-blocked.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - cannot reach compartment"
@@ -565,7 +565,7 @@
             "ip": "30.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_non-blocked.json",
+        "fixture_file": "./test/fixtures/test_event_non-blocked.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - cannot reach compartment"
@@ -581,7 +581,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_required_tag.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_required_tag.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - event is missing required taxonomy: tlp"
@@ -597,7 +597,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_required_tag.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_required_tag.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - event is missing required taxonomy: tlp"
@@ -613,7 +613,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_required_allowed_tag.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_required_allowed_tag.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - event is missing required taxonomy: tlp"
@@ -629,7 +629,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_required_allowed_tag.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_required_allowed_tag.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - event is missing required taxonomy: tlp"
@@ -645,7 +645,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_required_blocked_tag.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_required_blocked_tag.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - event has blocked tag: tlp:rainbow"
@@ -661,7 +661,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_blocked_required_blocked_tag.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_required_blocked_tag.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/edit/385283a1-b5e0-4e10-a532-dce11c365a56/metadata:1 - event has blocked tag: tlp:rainbow"
@@ -677,7 +677,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_non-blocked_required_allowed_tag.json",
+        "fixture_file": "./test/fixtures/test_event_non-blocked_required_allowed_tag.json",
         "expected_status_code": 200,
         "expected_logs": []
     },
@@ -691,7 +691,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_event_non-blocked_required_allowed_tag.json",
+        "fixture_file": "./test/fixtures/test_event_non-blocked_required_allowed_tag.json",
         "expected_status_code": 200,
         "expected_logs": []
     },
@@ -705,7 +705,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_galaxy_clusters_blocked_distribution.json",
+        "fixture_file": "./test/fixtures/test_galaxy_clusters_blocked_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/galaxies/pushCluster - galaxy cluster has blocked distribution level: 0"
@@ -721,7 +721,7 @@
             "ip": "40.0.0.1",
             "port": 22
         },
-        "event_fixture_file": "./test/fixtures/test_galaxy_clusters_non-blocked_distribution.json",
+        "fixture_file": "./test/fixtures/test_galaxy_clusters_non-blocked_distribution.json",
         "expected_status_code": 200,
         "expected_logs": []
     }

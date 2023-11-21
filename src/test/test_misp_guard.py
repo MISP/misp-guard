@@ -276,14 +276,14 @@ class TestMispGuard:
         caplog.set_level("INFO")
         mispguard = self.load_mispguard()
 
-        event_view_req = tutils.treq(
+        mock_request = tutils.treq(
             port=443,
             host="instance99-comp1.com",
             path="/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1",
             method=b"GET",
         )
 
-        flow = tflow.tflow(req=event_view_req)
+        flow = tflow.tflow(req=mock_request)
         flow.client_conn.peername = ("10.0.0.1", "22")
         mispguard.request(flow)
 
@@ -308,16 +308,16 @@ class TestMispGuard:
             method=scenario["method"]
         )
 
-        with open(scenario["event_fixture_file"], "rb") as f:
-            event = f.read()
+        with open(scenario["fixture_file"], "rb") as f:
+            fixture = f.read()
 
-        event_view_resp = tutils.tresp(
+        mock_response = tutils.tresp(
             status_code=200,
             headers=Headers(content_type="application/json"),
-            content=event
+            content=fixture
         )
 
-        flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
+        flow = tflow.tflow(req=event_view_req, resp=mock_response)
         flow.client_conn.peername = (scenario["client"]["ip"], scenario["client"]["port"])
         mispguard.request(flow)
         mispguard.response(flow)
@@ -339,8 +339,8 @@ class TestMispGuard:
         caplog.clear()
         mispguard = self.load_mispguard()
 
-        with open(scenario["event_fixture_file"], "rb") as f:
-            event = f.read()
+        with open(scenario["fixture_file"], "rb") as f:
+            fixture = f.read()
 
         event_view_req = tutils.treq(
             host=scenario["host"],
@@ -348,7 +348,7 @@ class TestMispGuard:
             path=scenario["url"],
             method=scenario["method"],
             headers=Headers(content_type="application/json"),
-            content=event
+            content=fixture
         )
 
         event_view_resp = tutils.tresp(

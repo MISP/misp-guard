@@ -34,6 +34,7 @@ class MISPHTTPFlow(http.HTTPFlow):
     is_event_index: bool = False
     is_pull: bool = False
     is_push: bool = False
+    is_sighting: bool = False
     is_galaxy: bool = False
 
 
@@ -118,7 +119,19 @@ class MispGuard:
                 "methods": [
                     "GET"
                 ]
-            }
+            },
+            {
+                "regex": r"^\/sightings\/restSearch\/event$",
+                "methods": [
+                    "POST"
+                ]
+            },
+            {
+                "regex": r"^\/sightings\/bulkSaveSightings\/[\w\-]{36}$",
+                "methods": [
+                    "POST"
+                ]
+            },
         ]
 
     def configure(self, updated):
@@ -243,6 +256,10 @@ class MispGuard:
             flow.is_pull = True
             flow.is_galaxy = True
 
+        if "/sightings/restSearch/event" in flow.request.path:
+            flow.is_pull = True
+            flow.is_sighting = True
+
         return flow
 
     def process_request(self, flow: MISPHTTPFlow) -> None:
@@ -280,6 +297,15 @@ class MispGuard:
             if "minimal" not in params or params["minimal"] != 1 or "published" not in params or params["published"] != 1:
                 raise ForbiddenException(
                     "{'minimal': 1, 'published': 1} is required for /galaxy_clusters/restSearch requests")
+
+        if flow.is_push and flow.is_sighting:
+            try:
+                sightings = flow.request.json()
+            except Exception as ex:
+                return self.forbidden(flow, str(ex))
+
+            rules = self.get_rules(flow)
+            return self.process_sightings(rules, sightings, flow)
 
     def process_response(self, flow: MISPHTTPFlow) -> None:
         logger.debug("processing response")
@@ -319,6 +345,15 @@ class MispGuard:
 
             rules = self.get_rules(flow)
             return self.process_galaxy_cluster(rules, galaxy_cluster, flow)
+
+        if flow.is_pull and flow.is_sighting:
+            try:
+                sightings = flow.response.json()
+            except Exception as ex:
+                return self.forbidden(flow, str(ex))
+
+            rules = self.get_rules(flow)
+            return self.process_sightings(rules, sightings, flow)
 
     def get_rules(self, flow: MISPHTTPFlow) -> list:
         logger.debug("getting misp-guard instance rules")
@@ -363,6 +398,15 @@ class MispGuard:
 
         try:
             self.check_blocked_galaxy_distribution_levels(rules["blocked_distribution_levels"], galaxy_cluster)
+        except ForbiddenException as ex:
+            return self.forbidden(flow, str(ex))
+
+    def process_sightings(self, rules: dict, sightings: dict, flow: MISPHTTPFlow) -> None:
+        logger.debug("processing sighting")
+
+        try:
+            # no rules for sightings yet
+            return None
         except ForbiddenException as ex:
             return self.forbidden(flow, str(ex))
 

@@ -1,0 +1,35 @@
+[
+    {
+        "Note": {
+            "id": "1",
+            "uuid": "9c0e3e20-b1ea-4473-81d2-845c4399c36d",
+            "object_uuid": "b3eedfc4-8ffa-41a2-875b-6c3d0e4602b8",
+            "object_type": "Attribute",
+            "authors": "john.doe@admin.test",
+            "org_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "orgc_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "created": "2024-10-04 08:09:39",
+            "modified": "2024-10-04 08:09:39",
+            "distribution": "1",
+            "sharing_group_id": null,
+            "locked": false,
+            "note": "Ceci est une note",
+            "language": "fr-BE",
+            "note_type": 0,
+            "note_type_name": "Note",
+            "Org": {
+                "id": "1",
+                "name": "HOST",
+                "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+                "local": true
+            },
+            "Orgc": {
+                "id": "1",
+                "name": "HOST",
+                "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+                "local": true
+            },
+            "_canEdit": true
+        }
+    }
+]

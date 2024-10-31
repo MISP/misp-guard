@@ -557,7 +557,9 @@ class MispGuard:
             self.check_event_level_rules(rules, analyst_relationship["related_object"])
 
         if analyst_relationship["related_object_type"] == "Object":
-            self.check_object_level_rules(rules, [analyst_relationship["related_object"]["Object"]])
+            self.check_object_level_rules(
+                rules, [analyst_relationship["related_object"]["Object"]]
+            )
 
         if analyst_relationship["related_object_type"] == "Attribute":
             self.check_attribute_level_rules(

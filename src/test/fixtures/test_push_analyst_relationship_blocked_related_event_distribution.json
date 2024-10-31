@@ -1,0 +1,59 @@
+{
+    "Relationship": {
+        "id": "1",
+        "uuid": "41146bcb-2869-4cf0-8abb-015e8d1350c9",
+        "object_uuid": "a81a9424-a62d-4a3d-b402-917d48b124bd",
+        "object_type": "Attribute",
+        "authors": "admin@admin.test",
+        "org_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+        "orgc_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+        "created": "2024-10-30 11:09:13",
+        "modified": "2024-10-30 11:09:13",
+        "distribution": "1",
+        "sharing_group_id": null,
+        "locked": false,
+        "relationship_type": "Acquaintance",
+        "related_object_uuid": "bba62eca-8f51-45c9-ad90-5abaca45d6cd",
+        "related_object_type": "Event",
+        "note_type": 2,
+        "note_type_name": "Relationship",
+        "Org": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "Orgc": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "_canEdit": true,
+        "related_object": {
+            "Event": {
+                "id": "37",
+                "org_id": "6",
+                "date": "2022-03-24",
+                "info": "Test Event",
+                "user_id": "138",
+                "uuid": "bba62eca-8f51-45c9-ad90-5abaca45d6cd",
+                "published": true,
+                "analysis": "1",
+                "attribute_count": "11",
+                "orgc_id": "2",
+                "timestamp": "1730278463",
+                "distribution": "0",
+                "sharing_group_id": "0",
+                "proposal_email_lock": false,
+                "locked": true,
+                "threat_level_id": "2",
+                "publish_timestamp": "1730278489",
+                "sighting_timestamp": "0",
+                "disable_correlation": false,
+                "extends_uuid": "",
+                "protected": null
+            }
+        }
+    }
+}

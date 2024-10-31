@@ -1,0 +1,57 @@
+{
+    "Relationship": {
+        "id": "1",
+        "uuid": "41146bcb-2869-4cf0-8abb-015e8d1350c9",
+        "object_uuid": "a81a9424-a62d-4a3d-b402-917d48b124bd",
+        "object_type": "Attribute",
+        "authors": "admin@admin.test",
+        "org_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+        "orgc_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+        "created": "2024-10-30 11:09:13",
+        "modified": "2024-10-30 11:09:13",
+        "distribution": "1",
+        "sharing_group_id": null,
+        "locked": false,
+        "relationship_type": "Acquaintance",
+        "related_object_uuid": "e37a6c99-c7dc-4e41-8c79-25e35c39df0a",
+        "related_object_type": "Attribute",
+        "note_type": 2,
+        "note_type_name": "Relationship",
+        "Org": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "Orgc": {
+            "id": "1",
+            "name": "HOST",
+            "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "local": true
+        },
+        "_canEdit": true,
+        "related_object": {
+            "Attribute": {
+                "id": "1",
+                "type": "ip-src",
+                "category": "Network activity",
+                "to_ids": false,
+                "uuid": "e37a6c99-c7dc-4e41-8c79-25e35c39df0a",
+                "event_id": "1",
+                "distribution": "0",
+                "timestamp": "1661956302",
+                "comment": "",
+                "sharing_group_id": "0",
+                "deleted": false,
+                "disable_correlation": false,
+                "object_id": "0",
+                "object_relation": null,
+                "first_seen": null,
+                "last_seen": null,
+                "value": "2.2.2.2",
+                "Galaxy": [],
+                "ShadowAttribute": []
+            }
+        }
+    }
+}

@@ -486,5 +486,95 @@
         "fixture_file": "./test/fixtures/empty.json",
         "expected_status_code": 200,
         "expected_logs": []
+    },
+    {
+        "name": "pull_analyst_note_blocked_distribution_level",
+        "host": "instance1-comp4.com",
+        "port": 443,
+        "url": "/analyst_data/index/Note/uuid[]:6f847552-aaab-4378-aa5f-369c416822d1.json",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_analyst_note_blocked_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [GET]/analyst_data/index/Note/uuid[]:6f847552-aaab-4378-aa5f-369c416822d1.json - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "pull_analyst_opinion_blocked_distribution_level",
+        "host": "instance1-comp4.com",
+        "port": 443,
+        "url": "/analyst_data/index/Opinion/uuid[]:9d9170c4-b9b8-4457-8f44-e5bbacc94367.json",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_analyst_opinion_blocked_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [GET]/analyst_data/index/Opinion/uuid[]:9d9170c4-b9b8-4457-8f44-e5bbacc94367.json - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "pull_analyst_relationship_blocked_distribution_level",
+        "host": "instance1-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/index/Relationship/uuid[]:8d96fbd5-2364-42e9-acca-4701bf794bfb.json",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_analyst_relationship_blocked_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [GET]/analyst_data/index/Relationship/uuid[]:8d96fbd5-2364-42e9-acca-4701bf794bfb.json - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "pull_analyst_opinion_non-blocked",
+        "host": "instance1-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/index/Opinion/uuid[]:f43b2e9c-93c3-4d1e-a99a-e0996ced962c.json",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_analyst_opinion_non-blocked.json",
+        "expected_status_code": 200,
+        "expected_logs": []
+    },
+    {
+        "name": "pull_analyst_note_non-blocked",
+        "host": "instance1-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/index/Opinion/uuid[]:9c0e3e20-b1ea-4473-81d2-845c4399c36d.json",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_analyst_note_non-blocked.json",
+        "expected_status_code": 200,
+        "expected_logs": []
+    },
+    {
+        "name": "pull_analyst_relationship_non-blocked",
+        "host": "instance1-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/index/Relationship/uuid[]:41146bcb-2869-4cf0-8abb-015e8d1350c9.json",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_analyst_relationship_non-blocked.json",
+        "expected_status_code": 200,
+        "expected_logs": []
     }
 ]

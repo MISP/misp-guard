@@ -738,5 +738,143 @@
         "fixture_file": "./test/fixtures/empty.json",
         "expected_status_code": 200,
         "expected_logs": []
+    },
+    {
+        "name": "push_analyst_notes_non-blocked",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_note_non-blocked.json",
+        "expected_status_code": 200,
+        "expected_logs": []
+    },
+    {
+        "name": "push_analyst_notes_blocked_distribution",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_note_blocked_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/analyst_data/pushAnalystData - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_analyst_opinion_non-blocked",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_opinion_non-blocked.json",
+        "expected_status_code": 200,
+        "expected_logs": []
+    },
+    {
+        "name": "push_analyst_opinion_blocked_distribution",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_opinion_blocked_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/analyst_data/pushAnalystData - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_analyst_relationship_non-blocked",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_relationship_non-blocked.json",
+        "expected_status_code": 200,
+        "expected_logs": []
+    },
+    {
+        "name": "push_analyst_relationship_blocked_distribution",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_relationship_blocked_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/analyst_data/pushAnalystData - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_analyst_relationship_blocked_related_event_distribution",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_relationship_blocked_related_event_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/analyst_data/pushAnalystData - event has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_analyst_relationship_blocked_related_attribute_distribution",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_relationship_blocked_related_attribute_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/analyst_data/pushAnalystData - attribute with a blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_analyst_relationship_blocked_related_object_distribution",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/pushAnalystData",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_push_analyst_relationship_blocked_related_object_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/analyst_data/pushAnalystData - object with a blocked distribution level: 0"
+        ]
     }
 ]

@@ -1,0 +1,35 @@
+[
+    {
+        "Opinion": {
+            "id": "1",
+            "uuid": "9d9170c4-b9b8-4457-8f44-e5bbacc94367",
+            "object_uuid": "b3eedfc4-8ffa-41a2-875b-6c3d0e4602b8",
+            "object_type": "Event",
+            "authors": "john.doe@admin.test",
+            "org_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "orgc_uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+            "created": "2024-10-04 08:09:47",
+            "modified": "2024-10-04 08:09:47",
+            "distribution": "0",
+            "sharing_group_id": null,
+            "locked": false,
+            "opinion": "75",
+            "comment": "This is an opinion",
+            "note_type": 1,
+            "note_type_name": "Opinion",
+            "Org": {
+                "id": "1",
+                "name": "HOST",
+                "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+                "local": true
+            },
+            "Orgc": {
+                "id": "1",
+                "name": "HOST",
+                "uuid": "10c8f445-888b-4a2d-bac8-4e1e8861d595",
+                "local": true
+            },
+            "_canEdit": true
+        }
+    }
+]

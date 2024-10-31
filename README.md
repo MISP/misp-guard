@@ -10,6 +10,9 @@ sequenceDiagram
     participant MISP Guard
     participant MISP B
 
+    rect rgb(191, 223, 255)
+    note right of MISP A: PUSH Events 
+
     MISP B->>MISP Guard: [GET]/servers/getVersion
     MISP Guard->>MISP A: [GET]/servers/getVersion
     MISP A->>MISP Guard: [GET]/servers/getVersion
@@ -38,8 +41,10 @@ sequenceDiagram
     MISP A->>MISP Guard: [POST]/events/edit/[UUID]
     MISP Guard->>MISP B: [POST]/events/edit/[UUID]
     end
+    end 
 
     rect rgb(191, 223, 255)
+    note right of MISP A: PUSH GalaxyClusters
     MISP B->>+MISP Guard: [POST]/galaxies/pushCluster
     note right of MISP Guard: Outgoing Galaxy Cluster is inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [POST]/galaxies/pushCluster
@@ -48,11 +53,25 @@ sequenceDiagram
     end
 
     rect rgb(191, 223, 255)
+    note right of MISP A: PUSH Sightings
     MISP B->>+MISP Guard: [POST]/sightings/bulkSaveSightings/[UUID]
     note right of MISP Guard: Outgoing Sightings are inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [POST]/sightings/bulkSaveSightings/[UUID]
     MISP A->>MISP Guard: [POST]/sightings/bulkSaveSightings/[UUID]
     MISP Guard->>MISP B: [POST]/sightings/bulkSaveSightings/[UUID]
+    end
+    
+    rect rgb(191, 223, 255)
+    note right of MISP A: PUSH AnalystData
+    MISP B->>+MISP Guard: [POST]/analyst_data/filterAnalystDataForPush
+    MISP A->>MISP Guard: [POST]/analyst_data/filterAnalystDataForPush
+    MISP Guard->>MISP B: [POST]/analyst_data/filterAnalystDataForPush
+
+    MISP B->>+MISP Guard: [POST]/analyst_data/pushAnalystData
+    note right of MISP Guard: Outgoing Analyst Data is inspected and rejected with 403 if any block rule matches
+    MISP Guard->>-MISP A: [POST]/analyst_data/pushAnalystData
+    MISP A->>MISP Guard: [POST]/analyst_data/pushAnalystData
+    MISP Guard->>MISP B: [POST]/analyst_data/pushAnalystData
     end
 ```
 
@@ -63,6 +82,8 @@ sequenceDiagram
     participant MISP Guard
     participant MISP B
 
+    rect rgb(191, 223, 255)
+    note right of MISP A: PULL Events 
     MISP A->>MISP Guard: [GET]/servers/getVersion
     MISP Guard->>MISP B: [GET]/servers/getVersion
     MISP B->>MISP Guard: [GET]/servers/getVersion
@@ -79,13 +100,19 @@ sequenceDiagram
     MISP B->>+MISP Guard: [GET]/events/view/[UUID]
     note right of MISP Guard: Incoming Event is inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/events/view/[UUID]
+    end
 
+    rect rgb(191, 223, 255)
+    note right of MISP A: PULL ShadowAttributes 
     MISP A->>MISP Guard: [GET]/shadow_attributes/index
     MISP Guard->>MISP B: [GET]/shadow_attributes/index
     MISP B->>+MISP Guard: [GET]/shadow_attributes/index
     note right of MISP Guard: Incoming Shadow Attributes are inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/shadow_attributes/index
+    end
 
+    rect rgb(191, 223, 255)
+    note right of MISP A: GalaxyClusters 
     MISP A->>+MISP Guard: [POST]/galaxy_clusters/restSearch
     note right of MISP Guard: Only `minimal` search requests to /galaxy_clusters/restSearch are allowed
     MISP Guard->>-MISP B: [POST]/galaxy_clusters/restSearch
@@ -97,12 +124,30 @@ sequenceDiagram
     MISP B->>+MISP Guard: [GET]/galaxy_clusters/view/[UUID]
     note right of MISP Guard: Incoming Galaxy Cluster is inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/galaxy_clusters/view/[UUID]
+    end
 
+    rect rgb(191, 223, 255)
+    note right of MISP A: PULL Sightings 
     MISP A->>MISP Guard: [POST]/sightings/restSearch/event
     MISP Guard->>MISP B: [POST]/sightings/restSearch/event
     MISP B->>+MISP Guard: [POST]/sightings/restSearch/event
     note right of MISP Guard: Incoming Sightings are inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [POST]/sightings/restSearch/event
+    end
+    
+    rect rgb(191, 223, 255)
+    note right of MISP A: PULL AnalystData 
+    MISP A->>MISP Guard: [POST]/analyst_data/indexMinimal
+    MISP Guard->>MISP B: [POST]/analyst_data/indexMinimal
+    MISP B->>+MISP Guard: [POST]/analyst_data/indexMinimal
+    MISP Guard->>-MISP A: [POST]/analyst_data/indexMinimal
+
+    MISP A->>MISP Guard: [GET]/analyst_data/index/[Note|Opinion|Relationship]/uuid:[UUID].json
+    MISP Guard->>MISP B: [GET]/analyst_data/index/[Note|Opinion|Relationship]/uuid:[UUID].json
+    MISP B->>+MISP Guard: [GET]/analyst_data/index/[Note|Opinion|Relationship]/uuid:[UUID].json
+    note right of MISP Guard: Incoming Analyst Data is inspected and rejected with 403 if any block rule matches
+    MISP Guard->>-MISP A: [GET]/analyst_data/index/[Note|Opinion|Relationship]/uuid:[UUID].json
+    end
 ```
 
 

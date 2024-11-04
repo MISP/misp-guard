@@ -52,7 +52,8 @@
                         "uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a"
                     }
                 }
-            ]
+            ],
+            "SharingGroupServer": []
         },
         "Org": {
             "id": "1",

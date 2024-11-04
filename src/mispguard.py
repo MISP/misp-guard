@@ -739,12 +739,15 @@ class MispGuard:
                 )
 
     def check_sharing_group_user_org_uuid(self, user_org_uuid: str, elem: dict) -> None:
-        if "SharingGroupServer" in elem["SharingGroup"]:
-            logger.debug("sharing group server found, skip X-UserOrgUUID check")
-            return None
-
         for sharing_group_org in elem["SharingGroup"]["SharingGroupOrg"]:
             if sharing_group_org["Organisation"]["uuid"] == user_org_uuid:
+                return None
+
+        for sharing_group_server in elem["SharingGroup"]["SharingGroupServer"]:
+            if sharing_group_server["all_orgs"]:
+                logger.warning(
+                    "sharing group server with `all_orgs` flag found, skip X-UserOrgUUID check"
+                )
                 return None
 
         raise ForbiddenException(

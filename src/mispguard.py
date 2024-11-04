@@ -328,6 +328,7 @@ class MispGuard:
 
     def process_response(self, flow: MISPHTTPFlow) -> None:
         logger.debug("processing response")
+
         if flow.is_pull and flow.is_event and flow.request.method == "HEAD":
             logger.debug("pull request [HEAD]/events/view passthrough")
             return None  # passthrough
@@ -342,6 +343,13 @@ class MispGuard:
                 return self.forbidden(flow, str(ex))
 
             rules = self.get_rules(flow)
+
+            # check flow has a header with the user org UUID
+            # `Security.user_org_uuid_in_response_header` setting in MISP
+            if flow.response.headers.get("X-UserOrgUUID") is not None:
+                logger.debug("Checking the X-UserOrgUUID header in the response")
+                rules["X-UserOrgUUID"] = flow.response.headers.get("X-UserOrgUUID")
+
             return self.process_event(rules, event, flow)
 
         if flow.is_pull and flow.is_shadow_attributes:
@@ -472,9 +480,8 @@ class MispGuard:
         self.check_blocked_event_distribution_levels(
             rules["blocked_distribution_levels"], event
         )
-        self.check_blocked_event_sharing_groups_uuids(
-            rules["blocked_sharing_groups_uuids"], event
-        )
+
+        self.check_event_sharing_groups_rules(rules, event)
 
         if "Note" in event["Event"]:
             self.check_analyst_data_rules(rules, event["Event"]["Note"])
@@ -501,9 +508,7 @@ class MispGuard:
             self.check_attribute_required_taxonomies(
                 rules["taxonomies_rules"], attribute
             )
-            self.check_blocked_attribute_sharing_groups_uuids(
-                rules["blocked_sharing_groups_uuids"], attribute
-            )
+            self.check_attributes_sharing_groups_rules(rules, attribute)
 
             if "ShadowAttribute" in attribute:
                 self.check_attribute_level_rules(rules, attribute["ShadowAttribute"])
@@ -522,9 +527,8 @@ class MispGuard:
             self.check_blocked_object_distribution_levels(
                 rules["blocked_distribution_levels"], object
             )
-            self.check_blocked_object_sharing_groups_uuids(
-                rules["blocked_sharing_groups_uuids"], object
-            )
+
+            self.check_object_sharing_groups_rules(rules, object)
             self.check_blocked_object_types(rules["blocked_object_types"], object)
             self.check_attribute_level_rules(rules, object["Attribute"])
 
@@ -733,6 +737,45 @@ class MispGuard:
                     "object with a blocked sharing group uuid: %s"
                     % object["SharingGroup"]["uuid"]
                 )
+
+    def check_sharing_group_user_org_uuid(self, user_org_uuid: str, elem: dict) -> None:
+        if "SharingGroupServer" in elem["SharingGroup"]:
+            logger.debug("sharing group server found, skip X-UserOrgUUID check")
+            return None
+
+        for sharing_group_org in elem["SharingGroup"]["SharingGroupOrg"]:
+            if sharing_group_org["Organisation"]["uuid"] == user_org_uuid:
+                return None
+
+        raise ForbiddenException(
+            "user with organisation uuid: %s (X-UserOrgUUID) not in sharing group"
+            % user_org_uuid
+        )
+
+    def check_event_sharing_groups_rules(self, rules: dict, event: dict) -> None:
+        self.check_blocked_event_sharing_groups_uuids(
+            rules["blocked_sharing_groups_uuids"], event
+        )
+        if "X-UserOrgUUID" in rules and "SharingGroup" in event["Event"]:
+            self.check_sharing_group_user_org_uuid(
+                rules["X-UserOrgUUID"], event["Event"]
+            )
+
+    def check_object_sharing_groups_rules(self, rules: dict, object: dict) -> None:
+        self.check_blocked_object_sharing_groups_uuids(
+            rules["blocked_sharing_groups_uuids"], object
+        )
+        if "X-UserOrgUUID" in rules and "SharingGroup" in object:
+            self.check_sharing_group_user_org_uuid(rules["X-UserOrgUUID"], object)
+
+    def check_attributes_sharing_groups_rules(
+        self, rules: dict, attributes: dict
+    ) -> None:
+        self.check_blocked_attribute_sharing_groups_uuids(
+            rules["blocked_sharing_groups_uuids"], attributes
+        )
+        if "X-UserOrgUUID" in rules and "SharingGroup" in attributes:
+            self.check_sharing_group_user_org_uuid(rules["X-UserOrgUUID"], attributes)
 
     def check_blocked_object_types(
         self, blocked_object_types: list, object: dict

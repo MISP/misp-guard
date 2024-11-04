@@ -44,7 +44,7 @@ class TestMispGuard:
             path="/events/index",
             method=b"POST",
             headers=Headers(content_type="application/json"),
-            content=b"{\"minimal\":0, \"published\":1}",
+            content=b'{"minimal":0, "published":1}',
         )
 
         flow = tflow.tflow(req=events_index_req)
@@ -52,8 +52,14 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "{'minimal': 1, 'published': 1} is required for /events/index requests" in caplog.text
-        assert "request blocked: [POST]/events/index - {'minimal': 1, 'published': 1} is required for /events/index requests" in caplog.text
+        assert (
+            "{'minimal': 1, 'published': 1} is required for /events/index requests"
+            in caplog.text
+        )
+        assert (
+            "request blocked: [POST]/events/index - {'minimal': 1, 'published': 1} is required for /events/index requests"
+            in caplog.text
+        )
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
@@ -70,7 +76,7 @@ class TestMispGuard:
             path="/galaxy_clusters/restSearch",
             method=b"POST",
             headers=Headers(content_type="application/json"),
-            content=b"{\"minimal\":0, \"published\":1}",
+            content=b'{"minimal":0, "published":1}',
         )
 
         flow = tflow.tflow(req=events_index_req)
@@ -78,8 +84,14 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "{'minimal': 1, 'published': 1} is required for /galaxy_clusters/restSearch requests" in caplog.text
-        assert "request blocked: [POST]/galaxy_clusters/restSearch - {'minimal': 1, 'published': 1} is required for /galaxy_clusters/restSearch requests" in caplog.text
+        assert (
+            "{'minimal': 1, 'published': 1} is required for /galaxy_clusters/restSearch requests"
+            in caplog.text
+        )
+        assert (
+            "request blocked: [POST]/galaxy_clusters/restSearch - {'minimal': 1, 'published': 1} is required for /galaxy_clusters/restSearch requests"
+            in caplog.text
+        )
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
@@ -107,7 +119,7 @@ class TestMispGuard:
     async def test_allowed_domain_from_unknown_src_is_blocked(self, caplog):
         caplog.set_level("INFO")
         mispguard = self.load_mispguard()
-        test_path="/torlist/?exit"
+        test_path = "/torlist/?exit"
 
         event_view_req = tutils.treq(
             port=443,
@@ -121,10 +133,17 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "source host 123.123.123.123 does not exist in instances hosts mapping" in caplog.text
-        assert "request blocked: [GET]" + test_path +  " - source host 123.123.123.123 does not exist in instances hosts mapping" in caplog.text
+        assert (
+            "source host 123.123.123.123 does not exist in instances hosts mapping"
+            in caplog.text
+        )
+        assert (
+            "request blocked: [GET]"
+            + test_path
+            + " - source host 123.123.123.123 does not exist in instances hosts mapping"
+            in caplog.text
+        )
         assert flow.response.status_code == 403
-
 
     @pytest.mark.asyncio
     async def test_allowed_domain_from_known_src_is_allowed(self, caplog):
@@ -138,9 +157,7 @@ class TestMispGuard:
             method=b"GET",
         )
 
-        event_view_resp = tutils.tresp(
-            status_code=200
-        )
+        event_view_resp = tutils.tresp(status_code=200)
 
         flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
         flow.client_conn.peername = ("20.0.0.2", "22")
@@ -152,12 +169,11 @@ class TestMispGuard:
         assert "response from allowed url - skipping further processing" in caplog.text
         assert flow.response.status_code == 200
 
-
     @pytest.mark.asyncio
     async def test_allowed_url_from_unknown_src_is_blocked(self, caplog):
         caplog.set_level("INFO")
         mispguard = self.load_mispguard()
-        test_path="/torlist/?exit"
+        test_path = "/torlist/?exit"
 
         event_view_req = tutils.treq(
             port=443,
@@ -171,10 +187,17 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "source host 123.123.123.123 does not exist in instances hosts mapping" in caplog.text
-        assert "request blocked: [GET]" + test_path +  " - source host 123.123.123.123 does not exist in instances hosts mapping" in caplog.text
+        assert (
+            "source host 123.123.123.123 does not exist in instances hosts mapping"
+            in caplog.text
+        )
+        assert (
+            "request blocked: [GET]"
+            + test_path
+            + " - source host 123.123.123.123 does not exist in instances hosts mapping"
+            in caplog.text
+        )
         assert flow.response.status_code == 403
-
 
     @pytest.mark.asyncio
     async def test_allowed_url_from_known_src_is_allowed(self, caplog):
@@ -188,9 +211,7 @@ class TestMispGuard:
             method=b"GET",
         )
 
-        event_view_resp = tutils.tresp(
-            status_code=200
-        )
+        event_view_resp = tutils.tresp(status_code=200)
 
         flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
         flow.client_conn.peername = ("20.0.0.2", "22")
@@ -213,9 +234,7 @@ class TestMispGuard:
             method=b"HEAD",
         )
 
-        event_view_resp = tutils.tresp(
-            status_code=200
-        )
+        event_view_resp = tutils.tresp(status_code=200)
 
         flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
         flow.client_conn.peername = ("20.0.0.2", "22")
@@ -236,9 +255,7 @@ class TestMispGuard:
             method=b"GET",
         )
 
-        event_view_resp = tutils.tresp(
-            status_code=200
-        )
+        event_view_resp = tutils.tresp(status_code=200)
 
         flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
         flow.client_conn.peername = ("20.0.0.2", "22")
@@ -246,7 +263,10 @@ class TestMispGuard:
         mispguard.response(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - invalid JSON body" in caplog.text
+        assert (
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - invalid JSON body"
+            in caplog.text
+        )
 
         assert flow.response.status_code == 403
 
@@ -267,7 +287,10 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - source host 90.0.0.1 does not exist in instances hosts mapping" in caplog.text
+        assert (
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - source host 90.0.0.1 does not exist in instances hosts mapping"
+            in caplog.text
+        )
 
         assert flow.response.status_code == 403
 
@@ -288,7 +311,10 @@ class TestMispGuard:
         mispguard.request(flow)
 
         assert "MispGuard initialized" in caplog.text
-        assert "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - destination host instance99-comp1.com does not exist in instances hosts mapping" in caplog.text
+        assert (
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - destination host instance99-comp1.com does not exist in instances hosts mapping"
+            in caplog.text
+        )
 
         assert flow.response.status_code == 403
 
@@ -305,7 +331,7 @@ class TestMispGuard:
             host=scenario["host"],
             port=scenario["port"],
             path=scenario["url"],
-            method=scenario["method"]
+            method=scenario["method"],
         )
 
         with open(scenario["fixture_file"], "rb") as f:
@@ -314,20 +340,26 @@ class TestMispGuard:
         mock_response = tutils.tresp(
             status_code=200,
             headers=Headers(content_type="application/json"),
-            content=fixture
+            content=fixture,
         )
 
         flow = tflow.tflow(req=event_view_req, resp=mock_response)
-        flow.client_conn.peername = (scenario["client"]["ip"], scenario["client"]["port"])
+        flow.client_conn.peername = (
+            scenario["client"]["ip"],
+            scenario["client"]["port"],
+        )
         mispguard.request(flow)
         mispguard.response(flow)
 
-        assert flow.response.status_code == scenario[
-            "expected_status_code"], f"Expected status code {scenario['expected_status_code']} but got {flow.response.status_code} for scenario {scenario['name']}"
+        assert (
+            flow.response.status_code == scenario["expected_status_code"]
+        ), f"Expected status code {scenario['expected_status_code']} but got {flow.response.status_code} for scenario {scenario['name']}"
         assert "MispGuard initialized" in caplog.text
         for expected_log in scenario["expected_logs"]:
             # print(caplog.text)
-            assert expected_log in caplog.text, f"expected log {expected_log} not found for scenario {scenario['name']}"
+            assert (
+                expected_log in caplog.text
+            ), f"expected log {expected_log} not found for scenario {scenario['name']}"
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("scenario", load_push_scenarios(), ids=lambda s: s["name"])
@@ -348,22 +380,68 @@ class TestMispGuard:
             path=scenario["url"],
             method=scenario["method"],
             headers=Headers(content_type="application/json"),
-            content=fixture
+            content=fixture,
         )
 
         event_view_resp = tutils.tresp(
-            status_code=200,
-            headers=Headers(content_type="application/json")
+            status_code=200, headers=Headers(content_type="application/json")
         )
 
         flow = tflow.tflow(req=event_view_req, resp=event_view_resp)
-        flow.client_conn.peername = (scenario["client"]["ip"], scenario["client"]["port"])
+        flow.client_conn.peername = (
+            scenario["client"]["ip"],
+            scenario["client"]["port"],
+        )
         mispguard.request(flow)
         mispguard.response(flow)
 
-        assert flow.response.status_code == scenario[
-            "expected_status_code"], f"Expected status code {scenario['expected_status_code']} but got {flow.response.status_code} for scenario {scenario['name']}"
+        assert (
+            flow.response.status_code == scenario["expected_status_code"]
+        ), f"Expected status code {scenario['expected_status_code']} but got {flow.response.status_code} for scenario {scenario['name']}"
         assert "MispGuard initialized" in caplog.text
         for expected_log in scenario["expected_logs"]:
             # print(caplog.text)
-            assert expected_log in caplog.text, f"expected log {expected_log} not found for scenario {scenario['name']}"
+            assert (
+                expected_log in caplog.text
+            ), f"expected log {expected_log} not found for scenario {scenario['name']}"
+
+    @pytest.mark.asyncio
+    async def test_pull_XUserOrgUUID_mismatch(self, caplog):
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        events_view_req = tutils.treq(
+            port=443,
+            host="instance1-comp1.com",
+            path="/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1",
+            method=b"GET",
+            headers=Headers(content_type="application/json"),
+        )
+
+        with open(
+            "test/fixtures/test_event_xuserorguuid-blocked_sharing_group.json", "rb"
+        ) as f:
+            fixture = f.read()
+
+        event_view_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=fixture,
+        )
+
+        # should be 87c33ffe-f83c-4eb1-be09-51f767f6fd5a
+        event_view_resp.headers["X-UserOrgUUID"] = (
+            "8b9661a3-8544-4f8d-94be-cd7ebe87e922"
+        )
+
+        flow = tflow.tflow(req=events_view_req, resp=event_view_resp)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - user with organisation uuid: 8b9661a3-8544-4f8d-94be-cd7ebe87e922 (X-UserOrgUUID) not in sharing group"
+            in caplog.text
+        )
+        assert flow.response.status_code == 403

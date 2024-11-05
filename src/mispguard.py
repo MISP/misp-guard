@@ -508,7 +508,7 @@ class MispGuard:
             self.check_attribute_required_taxonomies(
                 rules["taxonomies_rules"], attribute
             )
-            self.check_attributes_sharing_groups_rules(rules, attribute)
+            self.check_attribute_sharing_groups_rules(rules, attribute)
 
             if "ShadowAttribute" in attribute:
                 self.check_attribute_level_rules(rules, attribute["ShadowAttribute"])
@@ -771,14 +771,14 @@ class MispGuard:
         if "X-UserOrgUUID" in rules and "SharingGroup" in object:
             self.check_sharing_group_user_org_uuid(rules["X-UserOrgUUID"], object)
 
-    def check_attributes_sharing_groups_rules(
-        self, rules: dict, attributes: dict
+    def check_attribute_sharing_groups_rules(
+        self, rules: dict, attribute: dict
     ) -> None:
         self.check_blocked_attribute_sharing_groups_uuids(
-            rules["blocked_sharing_groups_uuids"], attributes
+            rules["blocked_sharing_groups_uuids"], attribute
         )
-        if "X-UserOrgUUID" in rules and "SharingGroup" in attributes:
-            self.check_sharing_group_user_org_uuid(rules["X-UserOrgUUID"], attributes)
+        if "X-UserOrgUUID" in rules and "SharingGroup" in attribute:
+            self.check_sharing_group_user_org_uuid(rules["X-UserOrgUUID"], attribute)
 
     def check_blocked_object_types(
         self, blocked_object_types: list, object: dict

@@ -576,5 +576,21 @@
         "fixture_file": "./test/fixtures/test_analyst_relationship_non-blocked.json",
         "expected_status_code": 200,
         "expected_logs": []
+    },
+    {
+        "name": "pull_event_blocked_event_report_distribution",
+        "host": "instance1-comp1.com",
+        "port": 443,
+        "url": "/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1",
+        "method": "GET",
+        "client": {
+            "ip": "10.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_event_report_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [GET]/events/view/385283a1-b5e0-4e10-a532-dce11c365a56/deleted[]:0/deleted[]:1/excludeGalaxy:1/includeEventCorrelations:0/includeFeedCorrelations:0/includeWarninglistHits:0/excludeLocalTags:1 - event report has blocked distribution level: 0"
+        ]
     }
 ]

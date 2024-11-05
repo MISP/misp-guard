@@ -876,5 +876,37 @@
         "expected_logs": [
             "request blocked: [POST]/analyst_data/pushAnalystData - object with a blocked distribution level: 0"
         ]
+    },
+    {
+        "name": "push_new_event_blocked_distribution",
+        "host": "instance1-comp2.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "20.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_event_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/events/add/metadata:1 - event has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_new_event_report_blocked_distribution",
+        "host": "instance1-comp2.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "20.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_event_report_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/events/add/metadata:1 - event report has blocked distribution level: 0"
+        ]
     }
 ]

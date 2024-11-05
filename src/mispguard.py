@@ -480,6 +480,9 @@ class MispGuard:
         self.check_blocked_event_distribution_levels(
             rules["blocked_distribution_levels"], event
         )
+        self.check_blocked_event_report_distribution_levels(
+            rules["blocked_distribution_levels"], event
+        )
 
         self.check_event_sharing_groups_rules(rules, event)
 
@@ -671,6 +674,17 @@ class MispGuard:
                     "event has blocked sharing group uuid: %s"
                     % event["Event"]["SharingGroup"]["uuid"]
                 )
+
+    def check_blocked_event_report_distribution_levels(
+        self, blocked_distribution_levels: list, event: dict
+    ) -> None:
+        if "EventReport" in event["Event"]:
+            for report in event["Event"]["EventReport"]:
+                if report["distribution"] in blocked_distribution_levels:
+                    raise ForbiddenException(
+                        "event report has blocked distribution level: %s"
+                        % report["distribution"]
+                    )
 
     def check_blocked_attribute_tags(
         self, taxonomies_rules: dict, attribute: dict

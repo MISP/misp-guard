@@ -480,6 +480,7 @@ class MispGuard:
         self.check_blocked_event_distribution_levels(
             rules["blocked_distribution_levels"], event
         )
+        self.check_blocked_event_report_rules(rules, event)
 
         self.check_event_sharing_groups_rules(rules, event)
 
@@ -545,7 +546,7 @@ class MispGuard:
         self.check_blocked_analyst_data_distribution_levels(
             rules["blocked_distribution_levels"], analyst_data
         )
-        # TODO: MISP does not support have sharing group UUIDs for analyst data
+        # TODO: MISP does not support sharing group UUIDs for analyst data
         # self.check_blocked_analyst_data_sharing_groups_uuids(
         #     rules["blocked_sharing_groups_uuids"], analyst_data
         # )
@@ -671,6 +672,27 @@ class MispGuard:
                     "event has blocked sharing group uuid: %s"
                     % event["Event"]["SharingGroup"]["uuid"]
                 )
+
+    def check_blocked_event_report_distribution_levels(
+        self, blocked_distribution_levels: list, report: dict
+    ) -> None:
+        if report["distribution"] in blocked_distribution_levels:
+            raise ForbiddenException(
+                "event report has blocked distribution level: %s"
+                % report["distribution"]
+            )
+
+    def check_blocked_event_report_rules(self, rules: dict, event: dict) -> None:
+        if "EventReport" in event["Event"]:
+            for report in event["Event"]["EventReport"]:
+                self.check_blocked_event_report_distribution_levels(
+                    rules["blocked_distribution_levels"], report
+                )
+
+                # TODO: MISP does not support sharing group UUIDs for event reports
+                # self.check_blocked_event_report_sharing_groups_uuids(
+                #     rules["blocked_sharing_groups_uuids"], report
+                # )
 
     def check_blocked_attribute_tags(
         self, taxonomies_rules: dict, attribute: dict

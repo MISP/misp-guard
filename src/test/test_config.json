@@ -220,19 +220,5 @@
                 "person"
             ]
         }
-    },
-    "instances_host_mapping": {
-        "instance1-comp1.com": "instance_1_1",
-        "10.0.0.1": "instance_1_1",
-        "instance2-comp1.com": "instance_1_2",
-        "10.0.0.2": "instance_1_2",
-        "instance1-comp2.com": "instance_2_1",
-        "20.0.0.1": "instance_1_2",
-        "instance2-comp2.com": "instance_2_2",
-        "20.0.0.2": "instance_2_2",
-        "instance1-comp3.com": "instance_1_3",
-        "30.0.0.1": "instance_1_3",
-        "instance1-comp4.com": "instance_1_4",
-        "40.0.0.1": "instance_1_4"
     }
 }

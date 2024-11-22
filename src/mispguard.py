@@ -97,6 +97,12 @@ class MispGuard:
                 with open("config.schema.json", "r") as file:
                     schema = json.load(file)
                 self.config = json.load(open(ctx.options.config))
+                
+                # create instances_host_mapping dictionary
+                self.config["instances_host_mapping"] = {}
+                for instance_id, instance in self.config["instances"].items():
+                    self.config["instances_host_mapping"][instance["host"]] = instance_id
+                    self.config["instances_host_mapping"][instance["ip"]] = instance_id
 
                 validate(
                     instance=self.config,

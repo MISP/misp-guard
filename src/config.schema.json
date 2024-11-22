@@ -172,17 +172,6 @@
                     ]
                 }
             }
-        },
-        "instances_host_mapping": {
-            "patternProperties": {
-                "^[a-z0-9_-]+$": {
-                    "type": "string",
-                    "pattern": "^[a-z0-9_]+$",
-                    "examples": [
-                        "instance_1"
-                    ]
-                }
-            }
         }
     }
 }

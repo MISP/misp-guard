@@ -905,7 +905,7 @@ class MispGuard:
 
     def get_event_from_message(self, message: http.Message) -> dict:
         if message.content is None:
-            return Exception("empty message body")
+            raise Exception("empty message body")
         try:
             event = message.json()
             if "Event" not in event:
@@ -916,7 +916,7 @@ class MispGuard:
 
     def get_shadow_attributes_from_message(self, message: http.Message) -> dict:
         if message.content is None:
-            return Exception("empty message body")
+            raise Exception("empty message body")
         try:
             return message.json()
         except json.decoder.JSONDecodeError:
@@ -924,7 +924,7 @@ class MispGuard:
 
     def get_galaxy_cluster_from_message(self, message: http.Message) -> dict:
         if message.content is None:
-            return Exception("empty message body")
+            raise Exception("empty message body")
         try:
             return message.json()
         except json.decoder.JSONDecodeError:

@@ -740,6 +740,54 @@
         "expected_logs": []
     },
     {
+        "name": "push_new_event_blocked_attribute_note_distribution",
+        "host": "instance1-comp2.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "20.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_note_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/events/add/metadata:1 - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_new_event_blocked_attribute_opinion_distribution",
+        "host": "instance1-comp2.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "20.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_opinion_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/events/add/metadata:1 - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_new_event_blocked_attribute_relationship_distribution",
+        "host": "instance1-comp2.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "20.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_relationship_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/events/add/metadata:1 - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
         "name": "push_analyst_notes_non-blocked",
         "host": "instance2-comp1.com",
         "port": 443,
@@ -876,6 +924,20 @@
         "expected_logs": [
             "request blocked: [POST]/analyst_data/pushAnalystData - object with a blocked distribution level: 0"
         ]
+    },
+    {
+        "name": "filter_analyst_data_for_push_non-blocked",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/filterAnalystDataForPush",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_filter_analyst_data_for_push_non-blocked.json",
+        "expected_status_code": 200,
+        "expected_logs": []
     },
     {
         "name": "push_new_event_blocked_distribution",

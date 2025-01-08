@@ -492,13 +492,16 @@ class MispGuard:
         self.check_event_sharing_groups_rules(rules, event)
 
         if "Note" in event["Event"]:
-            self.check_analyst_data_rules(rules, event["Event"]["Note"])
+            for note in event["Event"]["Note"]:
+                self.check_analyst_data_rules(rules, note)
 
         if "Opinion" in event["Event"]:
-            self.check_analyst_data_rules(rules, event["Event"]["Opinion"])
+            for opinion in event["Event"]["Opinion"]:
+                self.check_analyst_data_rules(rules, opinion)
 
         if "Relationship" in event["Event"]:
-            self.check_analyst_relationship_rules(rules, event["Event"]["Relationship"])
+            for relationship in event["Event"]["Relationship"]:
+                self.check_analyst_relationship_rules(rules, relationship)
 
     def check_attribute_level_rules(self, rules: dict, attributes: dict) -> None:
         logger.debug("checking attribute level rules")

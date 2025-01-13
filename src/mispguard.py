@@ -556,7 +556,7 @@ class MispGuard:
 
             if "Relationship" in object:
                 for relationship in object["Relationship"]:
-                    self.check_analyst_relationship_rules(rules, object["Relationship"])
+                    self.check_analyst_relationship_rules(rules, relationship)
 
     def check_analyst_data_rules(self, rules: dict, analyst_data: dict) -> None:
         self.check_blocked_analyst_data_distribution_levels(

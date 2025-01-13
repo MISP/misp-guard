@@ -820,7 +820,7 @@
         ]
     },
     {
-        "name": "push_new_event_blocked_attribute_relationship_distribution",
+        "name": "push_new_event_blocked_attribute_analyst_relationship_distribution",
         "host": "instance1-comp2.com",
         "port": 443,
         "url": "/events/add/metadata:1",
@@ -829,7 +829,55 @@
             "ip": "20.0.0.2",
             "port": 22
         },
-        "fixture_file": "./test/fixtures/test_event_blocked_attribute_relationship_distribution.json",
+        "fixture_file": "./test/fixtures/test_event_blocked_attribute_analyst_relationship_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/events/add/metadata:1 - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_new_event_blocked_object_note_distribution",
+        "host": "instance1-comp2.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "20.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_object_note_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/events/add/metadata:1 - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_new_event_blocked_object_opinion_distribution",
+        "host": "instance1-comp2.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "20.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_object_opinion_distribution.json",
+        "expected_status_code": 403,
+        "expected_logs": [
+            "request blocked: [POST]/events/add/metadata:1 - analyst data has blocked distribution level: 0"
+        ]
+    },
+    {
+        "name": "push_new_event_blocked_object_analyst_relationship_distribution",
+        "host": "instance1-comp2.com",
+        "port": 443,
+        "url": "/events/add/metadata:1",
+        "method": "POST",
+        "client": {
+            "ip": "20.0.0.2",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_event_blocked_object_analyst_relationship_distribution.json",
         "expected_status_code": 403,
         "expected_logs": [
             "request blocked: [POST]/events/add/metadata:1 - analyst data has blocked distribution level: 0"

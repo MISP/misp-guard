@@ -356,6 +356,7 @@ class TestMispGuard:
         ), f"Expected status code {scenario['expected_status_code']} but got {flow.response.status_code} for scenario {scenario['name']}"
         assert "MispGuard initialized" in caplog.text
         for expected_log in scenario["expected_logs"]:
+            # debug logs
             # print(caplog.text)
             assert (
                 expected_log in caplog.text
@@ -406,7 +407,15 @@ class TestMispGuard:
             ), f"expected log {expected_log} not found for scenario {scenario['name']}"
 
     @pytest.mark.asyncio
-    async def test_pull_XUserOrgUUID_mismatch(self, caplog):
+    @pytest.mark.parametrize(
+        "scenario",
+        [
+            "test_event_xuserorguuid-blocked_sharing_group",
+            "test_event_xuserorguuid-attribute_blocked_sharing_group",
+            "test_event_xuserorguuid-object-attribute_blocked_sharing_group",
+        ],
+    )
+    async def test_pull_XUserOrgUUID_mismatch(self, scenario: str, caplog):
         caplog.set_level("INFO")
         mispguard = self.load_mispguard()
 
@@ -418,9 +427,7 @@ class TestMispGuard:
             headers=Headers(content_type="application/json"),
         )
 
-        with open(
-            "test/fixtures/test_event_xuserorguuid-blocked_sharing_group.json", "rb"
-        ) as f:
+        with open("test/fixtures/" + scenario + ".json", "rb") as f:
             fixture = f.read()
 
         event_view_resp = tutils.tresp(
@@ -445,3 +452,28 @@ class TestMispGuard:
             in caplog.text
         )
         assert flow.response.status_code == 403
+
+    def test_no_config_file(self, caplog) -> mispguard.MispGuard:
+        mg = mispguard.MispGuard()
+        caplog.set_level("INFO")
+
+        with taddons.context(mg) as tctx:
+            try:
+                tctx.configure(mg, config="./test/not-found.json")
+                self.tctx = tctx
+            except SystemExit:
+                assert (
+                    "failed to load config file, use: `--set config=config.json`"
+                    in caplog.text
+                )
+
+    def test_invalid_config_file(self, caplog) -> mispguard.MispGuard:
+        mg = mispguard.MispGuard()
+        caplog.set_level("INFO")
+
+        with taddons.context(mg) as tctx:
+            try:
+                tctx.configure(mg, config="./test/fixtures/test_invalid_config.json")
+                self.tctx = tctx
+            except SystemExit:
+                assert "failed to load config file: " in caplog.text

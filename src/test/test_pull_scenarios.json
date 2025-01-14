@@ -578,6 +578,20 @@
         "expected_logs": []
     },
     {
+        "name": "analyst_data_index_minimal_non-blocked",
+        "host": "instance2-comp1.com",
+        "port": 443,
+        "url": "/analyst_data/indexMinimal",
+        "method": "POST",
+        "client": {
+            "ip": "10.0.0.1",
+            "port": 22
+        },
+        "fixture_file": "./test/fixtures/test_analyst_data_index_minimal_non-blocked.json",
+        "expected_status_code": 200,
+        "expected_logs": []
+    },
+    {
         "name": "pull_event_blocked_event_report_distribution",
         "host": "instance1-comp1.com",
         "port": 443,

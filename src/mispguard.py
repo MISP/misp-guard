@@ -37,7 +37,7 @@ class MISPHTTPFlow(http.HTTPFlow):
     is_sighting: bool = False
     is_galaxy: bool = False
     is_analyst_data: bool = False
-    is_analyst_data_index: bool = False
+    is_analyst_data_minimal_index: bool = False
     is_analyst_note: bool = False
     is_analyst_opinion: bool = False
     is_analyst_relationship: bool = False
@@ -97,18 +97,20 @@ class MispGuard:
                 with open("config.schema.json", "r") as file:
                     schema = json.load(file)
                 self.config = json.load(open(ctx.options.config))
-                
-                # create instances_host_mapping dictionary
-                self.config["instances_host_mapping"] = {}
-                for instance_id, instance in self.config["instances"].items():
-                    self.config["instances_host_mapping"][instance["host"]] = instance_id
-                    self.config["instances_host_mapping"][instance["ip"]] = instance_id
 
                 validate(
                     instance=self.config,
                     schema=schema,
                     format_checker=Draft202012Validator.FORMAT_CHECKER,
                 )
+
+                # create instances_host_mapping dictionary
+                self.config["instances_host_mapping"] = {}
+                for instance_id, instance in self.config["instances"].items():
+                    self.config["instances_host_mapping"][
+                        instance["host"]
+                    ] = instance_id
+                    self.config["instances_host_mapping"][instance["ip"]] = instance_id
 
             except Exception as e:
                 logger.error("failed to load config file: %s" % str(e))
@@ -236,6 +238,7 @@ class MispGuard:
         if "/analyst_data/indexMinimal" in flow.request.path:
             flow.is_pull = True
             flow.is_analyst_data = True
+            flow.is_analyst_data_minimal_index = True
 
         if "/analyst_data/index/Note/" in flow.request.path:
             flow.is_pull = True
@@ -255,7 +258,7 @@ class MispGuard:
         if "/analyst_data/filterAnalystDataForPush" in flow.request.path:
             flow.is_push = True
             flow.is_analyst_data = True
-            flow.is_analyst_data_index = True
+            flow.is_analyst_data_minimal_index = True
 
         if "/analyst_data/pushAnalystData" in flow.request.path:
             flow.is_push = True
@@ -322,7 +325,11 @@ class MispGuard:
             rules = self.get_rules(flow)
             return self.process_sightings(rules, sightings, flow)
 
-        if flow.is_push and flow.is_analyst_data and not flow.is_analyst_data_index:
+        if (
+            flow.is_push
+            and flow.is_analyst_data
+            and not flow.is_analyst_data_minimal_index
+        ):
             try:
                 analyst_data = flow.request.json()
                 logger.debug(analyst_data)
@@ -394,7 +401,11 @@ class MispGuard:
             rules = self.get_rules(flow)
             return self.process_sightings(rules, sightings, flow)
 
-        if flow.is_pull and flow.is_analyst_data:
+        if (
+            flow.is_pull
+            and flow.is_analyst_data
+            and not flow.is_analyst_data_minimal_index
+        ):
             try:
                 analyst_data = flow.response.json()
             except Exception as ex:
@@ -491,13 +502,16 @@ class MispGuard:
         self.check_event_sharing_groups_rules(rules, event)
 
         if "Note" in event["Event"]:
-            self.check_analyst_data_rules(rules, event["Event"]["Note"])
+            for note in event["Event"]["Note"]:
+                self.check_analyst_data_rules(rules, note)
 
         if "Opinion" in event["Event"]:
-            self.check_analyst_data_rules(rules, event["Event"]["Opinion"])
+            for opinion in event["Event"]["Opinion"]:
+                self.check_analyst_data_rules(rules, opinion)
 
         if "Relationship" in event["Event"]:
-            self.check_analyst_relationship_rules(rules, event["Event"]["Relationship"])
+            for relationship in event["Event"]["Relationship"]:
+                self.check_analyst_relationship_rules(rules, relationship)
 
     def check_attribute_level_rules(self, rules: dict, attributes: dict) -> None:
         logger.debug("checking attribute level rules")
@@ -521,13 +535,16 @@ class MispGuard:
                 self.check_attribute_level_rules(rules, attribute["ShadowAttribute"])
 
             if "Note" in attribute:
-                self.check_analyst_data_rules(rules, attribute["Note"])
+                for note in attribute["Note"]:
+                    self.check_analyst_data_rules(rules, note)
 
             if "Opinion" in attribute:
-                self.check_analyst_data_rules(rules, attribute["Opinion"])
+                for opinion in attribute["Opinion"]:
+                    self.check_analyst_data_rules(rules, opinion)
 
             if "Relationship" in attribute:
-                self.check_analyst_relationship_rules(rules, attribute["Relationship"])
+                for relationship in attribute["Relationship"]:
+                    self.check_analyst_relationship_rules(rules, relationship)
 
     def check_object_level_rules(self, rules: dict, objects: dict) -> None:
         for object in objects:
@@ -540,13 +557,16 @@ class MispGuard:
             self.check_attribute_level_rules(rules, object["Attribute"])
 
             if "Note" in object:
-                self.check_analyst_data_rules(rules, object["Note"])
+                for note in object["Note"]:
+                    self.check_analyst_data_rules(rules, note)
 
             if "Opinion" in object:
-                self.check_analyst_data_rules(rules, object["Opinion"])
+                for opinion in object["Opinion"]:
+                    self.check_analyst_data_rules(rules, opinion)
 
             if "Relationship" in object:
-                self.check_analyst_relationship_rules(rules, object["Relationship"])
+                for relationship in object["Relationship"]:
+                    self.check_analyst_relationship_rules(rules, relationship)
 
     def check_analyst_data_rules(self, rules: dict, analyst_data: dict) -> None:
         self.check_blocked_analyst_data_distribution_levels(

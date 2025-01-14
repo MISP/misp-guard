@@ -356,6 +356,7 @@ class TestMispGuard:
         ), f"Expected status code {scenario['expected_status_code']} but got {flow.response.status_code} for scenario {scenario['name']}"
         assert "MispGuard initialized" in caplog.text
         for expected_log in scenario["expected_logs"]:
+            # debug logs
             # print(caplog.text)
             assert (
                 expected_log in caplog.text
@@ -451,3 +452,25 @@ class TestMispGuard:
             in caplog.text
         )
         assert flow.response.status_code == 403
+
+    def test_no_config_file(self, caplog) -> mispguard.MispGuard:
+        mg = mispguard.MispGuard()
+        caplog.set_level("INFO")
+
+        with taddons.context(mg) as tctx:
+            try:
+                tctx.configure(mg, config="./test/not-found.json")
+                self.tctx = tctx
+            except SystemExit:
+                assert "failed to load config file, use: `--set config=config.json`" in caplog.text
+
+    def test_invalid_config_file(self, caplog) -> mispguard.MispGuard:
+        mg = mispguard.MispGuard()
+        caplog.set_level("INFO")
+
+        with taddons.context(mg) as tctx:
+            try:
+                tctx.configure(mg, config="./test/fixtures/test_invalid_config.json")
+                self.tctx = tctx
+            except SystemExit:
+                assert "failed to load config file: " in caplog.text

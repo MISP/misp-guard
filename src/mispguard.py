@@ -97,18 +97,20 @@ class MispGuard:
                 with open("config.schema.json", "r") as file:
                     schema = json.load(file)
                 self.config = json.load(open(ctx.options.config))
-                
-                # create instances_host_mapping dictionary
-                self.config["instances_host_mapping"] = {}
-                for instance_id, instance in self.config["instances"].items():
-                    self.config["instances_host_mapping"][instance["host"]] = instance_id
-                    self.config["instances_host_mapping"][instance["ip"]] = instance_id
 
                 validate(
                     instance=self.config,
                     schema=schema,
                     format_checker=Draft202012Validator.FORMAT_CHECKER,
                 )
+
+                # create instances_host_mapping dictionary
+                self.config["instances_host_mapping"] = {}
+                for instance_id, instance in self.config["instances"].items():
+                    self.config["instances_host_mapping"][
+                        instance["host"]
+                    ] = instance_id
+                    self.config["instances_host_mapping"][instance["ip"]] = instance_id
 
             except Exception as e:
                 logger.error("failed to load config file: %s" % str(e))
@@ -323,7 +325,11 @@ class MispGuard:
             rules = self.get_rules(flow)
             return self.process_sightings(rules, sightings, flow)
 
-        if flow.is_push and flow.is_analyst_data and not flow.is_analyst_data_minimal_index:
+        if (
+            flow.is_push
+            and flow.is_analyst_data
+            and not flow.is_analyst_data_minimal_index
+        ):
             try:
                 analyst_data = flow.request.json()
                 logger.debug(analyst_data)
@@ -395,7 +401,11 @@ class MispGuard:
             rules = self.get_rules(flow)
             return self.process_sightings(rules, sightings, flow)
 
-        if flow.is_pull and flow.is_analyst_data and not flow.is_analyst_data_minimal_index:
+        if (
+            flow.is_pull
+            and flow.is_analyst_data
+            and not flow.is_analyst_data_minimal_index
+        ):
             try:
                 analyst_data = flow.response.json()
             except Exception as ex:

@@ -462,7 +462,10 @@ class TestMispGuard:
                 tctx.configure(mg, config="./test/not-found.json")
                 self.tctx = tctx
             except SystemExit:
-                assert "failed to load config file, use: `--set config=config.json`" in caplog.text
+                assert (
+                    "failed to load config file, use: `--set config=config.json`"
+                    in caplog.text
+                )
 
     def test_invalid_config_file(self, caplog) -> mispguard.MispGuard:
         mg = mispguard.MispGuard()

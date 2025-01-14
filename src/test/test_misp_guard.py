@@ -406,7 +406,15 @@ class TestMispGuard:
             ), f"expected log {expected_log} not found for scenario {scenario['name']}"
 
     @pytest.mark.asyncio
-    async def test_pull_XUserOrgUUID_mismatch(self, caplog):
+    @pytest.mark.parametrize(
+        "scenario",
+        [
+            "test_event_xuserorguuid-blocked_sharing_group",
+            "test_event_xuserorguuid-attribute_blocked_sharing_group",
+            "test_event_xuserorguuid-object-attribute_blocked_sharing_group",
+        ],
+    )
+    async def test_pull_XUserOrgUUID_mismatch(self, scenario: str, caplog):
         caplog.set_level("INFO")
         mispguard = self.load_mispguard()
 
@@ -418,9 +426,7 @@ class TestMispGuard:
             headers=Headers(content_type="application/json"),
         )
 
-        with open(
-            "test/fixtures/test_event_xuserorguuid-blocked_sharing_group.json", "rb"
-        ) as f:
+        with open("test/fixtures/" + scenario + ".json", "rb") as f:
             fixture = f.read()
 
         event_view_resp = tutils.tresp(

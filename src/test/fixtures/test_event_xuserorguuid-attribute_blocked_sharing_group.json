@@ -11,50 +11,15 @@
         "attribute_count": "4",
         "analysis": "0",
         "timestamp": "1661956788",
-        "distribution": "4",
+        "distribution": "2",
         "proposal_email_lock": false,
         "locked": false,
         "publish_timestamp": "1661956380",
-        "sharing_group_id": "1",
+        "sharing_group_id": "0",
         "disable_correlation": false,
         "extends_uuid": "",
         "protected": null,
         "event_creator_email": "admin@admin.test",
-        "SharingGroup": {
-            "id": "1",
-            "name": "test_sharing_group",
-            "releasability": "",
-            "description": "",
-            "uuid": "e5d5a2a7-d659-4022-8b59-6afa4b658fd5",
-            "organisation_uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a",
-            "org_id": "1",
-            "sync_user_id": "0",
-            "active": true,
-            "created": "2022-08-31 14:41:35",
-            "modified": "2022-08-31 15:06:51",
-            "local": true,
-            "roaming": false,
-            "Organisation": {
-                "id": "1",
-                "name": "test_org",
-                "uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a"
-            },
-            "SharingGroupOrg": [
-                {
-                    "id": "10",
-                    "sharing_group_id": "1",
-                    "org_id": "1",
-                    "uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a",
-                    "extend": true,
-                    "Organisation": {
-                        "id": "1",
-                        "name": "test_org",
-                        "uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a"
-                    }
-                }
-            ],
-            "SharingGroupServer": []
-        },
         "Org": {
             "id": "1",
             "name": "HOST",
@@ -75,10 +40,10 @@
                 "to_ids": false,
                 "uuid": "e37a6c99-c7dc-4e41-8c79-25e35c39df0a",
                 "event_id": "1",
-                "distribution": "5",
+                "distribution": "4",
                 "timestamp": "1661956302",
                 "comment": "",
-                "sharing_group_id": "0",
+                "sharing_group_id": "1",
                 "deleted": false,
                 "disable_correlation": false,
                 "object_id": "0",
@@ -87,7 +52,42 @@
                 "last_seen": null,
                 "value": "2.2.2.2",
                 "Galaxy": [],
-                "ShadowAttribute": []
+                "ShadowAttribute": [],
+                "SharingGroup": {
+                    "id": "1",
+                    "name": "test_sharing_group",
+                    "releasability": "",
+                    "description": "",
+                    "uuid": "e5d5a2a7-d659-4022-8b59-6afa4b658fd5",
+                    "organisation_uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a",
+                    "org_id": "1",
+                    "sync_user_id": "0",
+                    "active": true,
+                    "created": "2022-08-31 14:41:35",
+                    "modified": "2022-08-31 15:06:51",
+                    "local": true,
+                    "roaming": false,
+                    "Organisation": {
+                        "id": "1",
+                        "name": "test_org",
+                        "uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a"
+                    },
+                    "SharingGroupOrg": [
+                        {
+                            "id": "10",
+                            "sharing_group_id": "1",
+                            "org_id": "1",
+                            "uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a",
+                            "extend": true,
+                            "Organisation": {
+                                "id": "1",
+                                "name": "test_org",
+                                "uuid": "87c33ffe-f83c-4eb1-be09-51f767f6fd5a"
+                            }
+                        }
+                    ],
+                    "SharingGroupServer": []
+                }
             }
         ],
         "ShadowAttribute": [],

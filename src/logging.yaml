@@ -9,16 +9,16 @@ handlers:
   console:
     class: logging.StreamHandler
     level: DEBUG
-    formatter: simple
+    formatter: verbose
     stream: ext://sys.stdout
   file:
     class: logging.handlers.TimedRotatingFileHandler
-    level: DEBUG
-    formatter: verbose
+    level: INFO
+    formatter: simple
     when: D
-    backupCount: 0
+    backupCount: 5
     filename: ./logs/misp-guard.log
 loggers:
   root:
     level: DEBUG
-    handlers: [console]
+    handlers: [console, file]

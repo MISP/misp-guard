@@ -2,3 +2,4 @@ mitmproxy
 jsonschema
 jsonschema[format]
 pyyaml
+watchdog

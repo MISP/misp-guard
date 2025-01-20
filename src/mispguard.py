@@ -4,14 +4,17 @@ The rules are defined in a JSON file.
 """
 
 from functools import lru_cache
-from mitmproxy import http, ctx
+from mitmproxy import http, ctx, addonmanager
 from jsonschema import validate, Draft202012Validator
 import json
 import re
-from os.path import exists
+from os.path import exists, abspath, dirname
 import logging
 import logging.config
 import yaml
+
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 with open("logging.yaml", "r") as f:
     yaml_config = yaml.safe_load(f.read())
@@ -22,6 +25,18 @@ logger = logging.getLogger(__name__)
 
 class ForbiddenException(Exception):
     pass
+
+
+class ConfigWatcher(FileSystemEventHandler):
+    def __init__(self, addon):
+        self.addon = addon
+
+    def on_modified(self, event):
+        if ctx.options.config in event.src_path:
+            # check if the config file was modified
+            if self.addon.config_checksum != hash(open(ctx.options.config).read()):
+                logger.info(f"{ctx.options.config} modified, reloading addon...")
+                self.addon.configure(True)
 
 
 class MISPHTTPFlow(http.HTTPFlow):
@@ -45,7 +60,14 @@ class MISPHTTPFlow(http.HTTPFlow):
 
 class MispGuard:
     def __init__(self):
+        # watchdog observer setup for config file changes
+        self.config_watcher = ConfigWatcher(self)
+        self.observer = Observer()
+        self.observer.schedule(self.config_watcher, ".", recursive=False)
+        self.observer.start()
+
         self.config: dict = {}
+        self.config_checksum = None
         self.allowed_endpoints = [
             {"regex": r"^\/servers\/getVersion$", "methods": ["GET"]},
             {"regex": r"^\/servers\/postTest$", "methods": ["POST"]},
@@ -97,6 +119,7 @@ class MispGuard:
                 with open("config.schema.json", "r") as file:
                     schema = json.load(file)
                 self.config = json.load(open(ctx.options.config))
+                self.config_checksum = hash(open(ctx.options.config).read())
 
                 validate(
                     instance=self.config,
@@ -115,6 +138,9 @@ class MispGuard:
             except Exception as e:
                 logger.error("failed to load config file: %s" % str(e))
                 exit(1)
+
+            logger.info("configuration loaded")
+            logger.info(json.dumps(self.config, indent=4))
 
         else:
             logger.error("failed to load config file, use: `--set config=config.json`")

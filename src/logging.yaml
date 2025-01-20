@@ -20,5 +20,5 @@ handlers:
     filename: ./logs/misp-guard.log
 loggers:
   root:
-    level: DEBUG
+    level: INFO
     handlers: [console, file]

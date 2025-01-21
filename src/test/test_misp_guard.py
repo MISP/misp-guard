@@ -167,6 +167,7 @@ class TestMispGuard:
         assert "MispGuard initialized" in caplog.text
         assert "request from allowed url - skipping further processing" in caplog.text
         assert "response from allowed url - skipping further processing" in caplog.text
+        assert "domain snort-org-site.s3.amazonaws.com was allowed by the allowlist" in caplog.text
         assert flow.response.status_code == 200
 
     @pytest.mark.asyncio
@@ -221,6 +222,7 @@ class TestMispGuard:
         assert "MispGuard initialized" in caplog.text
         assert "request from allowed url - skipping further processing" in caplog.text
         assert "response from allowed url - skipping further processing" in caplog.text
+        assert "url http://www.dan.me.uk:443/torlist/?exit was allowed by the allowlist" in caplog.text
         assert flow.response.status_code == 200
 
     @pytest.mark.asyncio

@@ -208,12 +208,14 @@ class MispGuard:
 
     def url_is_allowed(self, flow: http.HTTPFlow) -> bool:
         if flow.request.url in self.config["allowlist"]["urls"]:
+            logger.info(f"url {flow.request.url} was allowed by the allowlist")
             return True
         else:
             return False
 
     def domain_is_allowed(self, flow: http.HTTPFlow) -> bool:
         if flow.request.host in self.config["allowlist"]["domains"]:
+            logger.info(f"domain {flow.request.host} was allowed by the allowlist")
             return True
         else:
             return False

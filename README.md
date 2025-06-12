@@ -100,6 +100,11 @@ sequenceDiagram
     MISP B->>+MISP Guard: [GET]/events/view/[UUID]
     note right of MISP Guard: Incoming Event is inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/events/view/[UUID]
+
+    MISP A->>MISP Guard: [GET]/users/view/me.json
+    MISP Guard->>MISP B: [GET]/users/view/me.json
+    MISP B->>MISP Guard: [GET]/users/view/me.json
+    MISP Guard->>MISP A: [GET]/users/view/me.json
     end
 
     rect rgb(191, 223, 255)
@@ -124,6 +129,11 @@ sequenceDiagram
     MISP B->>+MISP Guard: [GET]/galaxy_clusters/view/[UUID]
     note right of MISP Guard: Incoming Galaxy Cluster is inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/galaxy_clusters/view/[UUID]
+
+    MISP A->>MISP Guard: [GET]/users/view/me.json
+    MISP Guard->>MISP B: [GET]/users/view/me.json
+    MISP B->>MISP Guard: [GET]/users/view/me.json
+    MISP Guard->>MISP A: [GET]/users/view/me.json
     end
 
     rect rgb(191, 223, 255)
@@ -147,6 +157,11 @@ sequenceDiagram
     MISP B->>+MISP Guard: [GET]/analyst_data/index/[Note|Opinion|Relationship]/uuid:[UUID].json
     note right of MISP Guard: Incoming Analyst Data is inspected and rejected with 403 if any block rule matches
     MISP Guard->>-MISP A: [GET]/analyst_data/index/[Note|Opinion|Relationship]/uuid:[UUID].json
+
+    MISP A->>MISP Guard: [GET]/users/view/me.json
+    MISP Guard->>MISP B: [GET]/users/view/me.json
+    MISP B->>MISP Guard: [GET]/users/view/me.json
+    MISP Guard->>MISP A: [GET]/users/view/me.json
     end
 ```
 

@@ -71,6 +71,7 @@ class MispGuard:
         self.allowed_endpoints = [
             {"regex": r"^\/servers\/getVersion$", "methods": ["GET"]},
             {"regex": r"^\/servers\/postTest$", "methods": ["POST"]},
+            {"regex": r"^\/users\/view\/me\.json$", "methods": ["GET"]},
             {"regex": r"^\/events\/index$", "methods": ["POST"]},
             {"regex": r"^\/events\/filterEventIdsForPush$", "methods": ["POST"]},
             {"regex": r"^\/events\/view\/[\w\-]{36}$", "methods": ["HEAD"]},

@@ -384,7 +384,6 @@ class MispGuard:
         ):
             try:
                 analyst_data = flow.request.json()
-                logger.debug(analyst_data)
             except Exception as ex:
                 return self.forbidden(flow, str(ex))
 

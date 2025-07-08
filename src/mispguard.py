@@ -718,7 +718,9 @@ class MispGuard:
             if tag["name"].startswith(required_taxonomy + ":"):
                 # if there are allowed tags, check if the tag is allowed
                 # otherwise any tag of this taxonomy is ok
-                if len(allowed_tags) == 0 or tag["name"] in allowed_tags:
+                if len(allowed_tags) == 0 or tag["name"].lower() in [
+                    allowed_tag.lower() for allowed_tag in allowed_tags
+                ]:
                     return True
 
         raise ForbiddenException(
@@ -728,7 +730,10 @@ class MispGuard:
     def check_blocked_event_tags(self, taxonomies_rules: dict, event: dict) -> None:
         if "Tag" in event["Event"]:
             for tag in event["Event"]["Tag"]:
-                if tag["name"] in taxonomies_rules["blocked_tags"]:
+                if tag["name"].lower() in [
+                    blocked_tag.lower()
+                    for blocked_tag in taxonomies_rules["blocked_tags"]
+                ]:
                     raise ForbiddenException("event has blocked tag: %s" % tag["name"])
 
     def check_blocked_event_distribution_levels(
@@ -776,7 +781,10 @@ class MispGuard:
     ) -> None:
         if taxonomies_rules["blocked_tags"] and "Tag" in attribute:
             for tag in attribute["Tag"]:
-                if tag["name"] in taxonomies_rules["blocked_tags"]:
+                if tag["name"].lower() in [
+                    blocked_tag.lower()
+                    for blocked_tag in taxonomies_rules["blocked_tags"]
+                ]:
                     raise ForbiddenException(
                         "attribute with a blocked tag: %s" % tag["name"]
                     )

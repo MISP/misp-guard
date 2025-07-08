@@ -198,11 +198,18 @@ See sample config [here](src/test/test_config.json).
 
 ## Instructions
 
+### Requirements
+* Python 3.12 or newer.
+* `venv` (recommended).
+
 ### Installation
 ```bash
 $ git clone https://github.com/MISP/misp-guard.git
 $ cd src/
-$ pip install -r requirements.txt
+$ apt install python3.12-venv
+$ python3.12 -m venv .venv
+$ source .venv/bin/activate
+$ pip3 install -r requirements.txt
 ```
 
 ### Setup

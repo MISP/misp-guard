@@ -174,8 +174,10 @@ class MispGuard:
         if not (self.url_is_allowed(flow) or self.domain_is_allowed(flow)):
             try:
                 flow = self.enrich_flow(flow)
-                if self.can_reach_compartment(flow) and self.is_allowed_endpoint(
-                    flow.request.method, flow.request.path
+                if (
+                    self.can_reach_compartment(flow)
+                    and self.can_reach_dst_host_port(flow)
+                    and self.is_allowed_endpoint(flow.request.method, flow.request.path)
                 ):
                     return self.process_request(flow)
             except ForbiddenException as ex:
@@ -205,7 +207,9 @@ class MispGuard:
         if not (self.url_is_allowed(flow) or self.domain_is_allowed(flow)):
             try:
                 flow = self.enrich_flow(flow)
-                if self.can_reach_compartment(flow):
+                if self.can_reach_compartment(flow) and self.can_reach_dst_host_port(
+                    flow
+                ):
                     return self.process_response(flow)
             except ForbiddenException as ex:
                 logger.error(ex)
@@ -949,6 +953,26 @@ class MispGuard:
             )
 
         return self.config["instances_host_mapping"][flow.request.host]
+
+    @lru_cache
+    def can_reach_dst_host_port(self, flow: MISPHTTPFlow) -> bool:
+        logger.debug(
+            "host reach check - src: %s, dst: %s:%d"
+            % (flow.src_instance_id, flow.dst_instance_id, flow.request.port)
+        )
+
+        if flow.request.port == self.config["instances"][flow.dst_instance_id]["port"]:
+            return True
+
+        logger.error(
+            "request blocked: [%s]%s - %s"
+            % (
+                flow.request.method,
+                flow.request.path,
+                "destination port is not allowed",
+            )
+        )
+        return False
 
     @lru_cache
     def can_reach_compartment(self, flow: MISPHTTPFlow) -> bool:

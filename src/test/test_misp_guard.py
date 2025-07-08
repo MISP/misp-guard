@@ -321,6 +321,30 @@ class TestMispGuard:
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
+    async def test_dst_port_not_allowed(self, caplog):
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        mock_request = tutils.treq(
+            port=4444,
+            host="instance1-comp1.com",
+            path="/users/view/me.json",
+            method=b"GET",
+        )
+
+        flow = tflow.tflow(req=mock_request)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/users/view/me.json - destination port is not allowed"
+            in caplog.text
+        )
+
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
     @pytest.mark.parametrize("scenario", load_pull_scenarios(), ids=lambda s: s["name"])
     async def test_rules_pull(self, scenario: dict, caplog):
         """

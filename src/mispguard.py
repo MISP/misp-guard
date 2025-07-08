@@ -739,7 +739,7 @@ class MispGuard:
     def check_blocked_event_distribution_levels(
         self, blocked_distribution_levels: list, event: dict
     ) -> None:
-        if event["Event"]["distribution"] in blocked_distribution_levels:
+        if str(event["Event"]["distribution"]) in blocked_distribution_levels:
             raise ForbiddenException(
                 "event has blocked distribution level: %s"
                 % event["Event"]["distribution"]
@@ -758,7 +758,7 @@ class MispGuard:
     def check_blocked_event_report_distribution_levels(
         self, blocked_distribution_levels: list, report: dict
     ) -> None:
-        if report["distribution"] in blocked_distribution_levels:
+        if str(report["distribution"]) in blocked_distribution_levels:
             raise ForbiddenException(
                 "event report has blocked distribution level: %s"
                 % report["distribution"]
@@ -794,7 +794,7 @@ class MispGuard:
     ) -> None:
         if (
             "distribution" in attribute
-            and attribute["distribution"] in blocked_distribution_levels
+            and str(attribute["distribution"]) in blocked_distribution_levels
         ):
             raise ForbiddenException(
                 "attribute with a blocked distribution level: %s"
@@ -830,7 +830,7 @@ class MispGuard:
     def check_blocked_object_distribution_levels(
         self, blocked_distribution_levels: list, object: dict
     ) -> None:
-        if object["distribution"] in blocked_distribution_levels:
+        if str(object["distribution"]) in blocked_distribution_levels:
             raise ForbiddenException(
                 "object with a blocked distribution level: %s" % object["distribution"]
             )
@@ -897,7 +897,7 @@ class MispGuard:
         self, blocked_distribution_levels: list, galaxy_cluster: dict
     ) -> None:
         if (
-            galaxy_cluster["GalaxyCluster"]["distribution"]
+            str(galaxy_cluster["GalaxyCluster"]["distribution"])
             in blocked_distribution_levels
         ):
             raise ForbiddenException(
@@ -908,7 +908,7 @@ class MispGuard:
     def check_blocked_analyst_data_distribution_levels(
         self, blocked_distribution_levels: list, analyst_data: dict
     ) -> None:
-        if analyst_data["distribution"] in blocked_distribution_levels:
+        if str(analyst_data["distribution"]) in blocked_distribution_levels:
             raise ForbiddenException(
                 "analyst data has blocked distribution level: %s"
                 % analyst_data["distribution"]

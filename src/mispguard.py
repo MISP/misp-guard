@@ -4,7 +4,8 @@ The rules are defined in a JSON file.
 """
 
 from functools import lru_cache
-from mitmproxy import http, ctx, addonmanager
+from mitmproxy import http, ctx, connection
+from mitmproxy.proxy import server_hooks
 from jsonschema import validate, Draft202012Validator
 import json
 import re
@@ -169,6 +170,25 @@ class MispGuard:
 
     def load(self, loader):
         loader.add_option("config", str, "", "MISP Guard configuration file")
+
+    def server_connect(self, data: server_hooks.ServerConnectionHookData):
+        dst_host, dst_port = data.server.address
+
+        if dst_host in self.config["allowlist"]["domains"]:
+            logger.error(f"domain {dst_host} was allowed by the allowlist")
+            return None
+
+        if dst_host in self.config["instances_host_mapping"]:
+            dst_instance_id = self.config["instances_host_mapping"][dst_host]
+
+            if dst_port == self.config["instances"][dst_instance_id]["port"]:
+                logger.error(
+                    f"destination port {dst_port} for host {dst_host} is not allowed"
+                )
+
+            return None
+
+        data.server.error = "connection not allowed."
 
     def request(self, flow: http.HTTPFlow) -> None:
         if not (self.url_is_allowed(flow) or self.domain_is_allowed(flow)):

@@ -233,6 +233,7 @@ Done, outgoing MISP sync requests will be inspected and dropped according to the
 
 ### Testing
  ```
- src src/
- pytest
+ $ pip install pytest pytest-asyncio
+ $ src src/
+ $ pytest
  ```

@@ -12,6 +12,7 @@ from os.path import exists, abspath, dirname
 import logging
 import logging.config
 import yaml
+import re
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -19,6 +20,24 @@ from watchdog.events import FileSystemEventHandler
 with open("logging.yaml", "r") as f:
     yaml_config = yaml.safe_load(f.read())
     logging.config.dictConfig(yaml_config)
+
+
+def sanitize_log_input(s: str) -> str:
+    return re.sub(r"[\r\n\t\x00-\x1f\x7f]", "", s)
+
+
+class SafeFormatter(logging.Formatter):
+    def format(self, record):
+        if record.args:
+            record.args = tuple(sanitize_log_input(str(arg)) for arg in record.args)
+        record.msg = sanitize_log_input(str(record.msg))
+        return super().format(record)
+
+
+for handler in logging.root.handlers:
+    if isinstance(handler.formatter, logging.Formatter):
+        old_format = handler.formatter._fmt
+        handler.setFormatter(SafeFormatter(fmt=old_format))
 
 logger = logging.getLogger(__name__)
 

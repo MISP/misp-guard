@@ -182,11 +182,11 @@ class MispGuard:
             dst_instance_id = self.config["instances_host_mapping"][dst_host]
 
             if dst_port == self.config["instances"][dst_instance_id]["port"]:
+                return None
+            else:
                 logger.error(
                     f"destination port {dst_port} for host {dst_host} is not allowed"
                 )
-
-            return None
 
         data.server.error = "connection not allowed."
 

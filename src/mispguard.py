@@ -910,7 +910,10 @@ class MispGuard:
     def check_blocked_object_types(
         self, blocked_object_types: list, object: dict
     ) -> None:
-        if object["name"] in blocked_object_types:
+        if object["name"].lower() in [
+            blocked_object_types.lower()
+            for blocked_object_types in blocked_object_types
+        ]:
             raise ForbiddenException("object with a blocked type: %s" % object["name"])
 
     def check_blocked_galaxy_distribution_levels(

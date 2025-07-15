@@ -4,7 +4,8 @@ The rules are defined in a JSON file.
 """
 
 from functools import lru_cache
-from mitmproxy import http, ctx, addonmanager
+from mitmproxy import http, ctx, connection
+from mitmproxy.proxy import server_hooks
 from jsonschema import validate, Draft202012Validator
 import json
 import re
@@ -12,6 +13,7 @@ from os.path import exists, abspath, dirname
 import logging
 import logging.config
 import yaml
+import re
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -19,6 +21,24 @@ from watchdog.events import FileSystemEventHandler
 with open("logging.yaml", "r") as f:
     yaml_config = yaml.safe_load(f.read())
     logging.config.dictConfig(yaml_config)
+
+
+def sanitize_log_input(s: str) -> str:
+    return re.sub(r"[\r\n\t\x00-\x1f\x7f]", "", s)
+
+
+class SafeFormatter(logging.Formatter):
+    def format(self, record):
+        if record.args:
+            record.args = tuple(sanitize_log_input(str(arg)) for arg in record.args)
+        record.msg = sanitize_log_input(str(record.msg))
+        return super().format(record)
+
+
+for handler in logging.root.handlers:
+    if isinstance(handler.formatter, logging.Formatter):
+        old_format = handler.formatter._fmt
+        handler.setFormatter(SafeFormatter(fmt=old_format))
 
 logger = logging.getLogger(__name__)
 
@@ -151,12 +171,33 @@ class MispGuard:
     def load(self, loader):
         loader.add_option("config", str, "", "MISP Guard configuration file")
 
+    def server_connect(self, data: server_hooks.ServerConnectionHookData):
+        dst_host, dst_port = data.server.address
+
+        if dst_host in self.config["allowlist"]["domains"]:
+            logger.error(f"domain {dst_host} was allowed by the allowlist")
+            return None
+
+        if dst_host in self.config["instances_host_mapping"]:
+            dst_instance_id = self.config["instances_host_mapping"][dst_host]
+
+            if dst_port == self.config["instances"][dst_instance_id]["port"]:
+                return None
+            else:
+                logger.error(
+                    f"destination port {dst_port} for host {dst_host} is not allowed"
+                )
+
+        data.server.error = "connection not allowed."
+
     def request(self, flow: http.HTTPFlow) -> None:
         if not (self.url_is_allowed(flow) or self.domain_is_allowed(flow)):
             try:
                 flow = self.enrich_flow(flow)
-                if self.can_reach_compartment(flow) and self.is_allowed_endpoint(
-                    flow.request.method, flow.request.path
+                if (
+                    self.can_reach_compartment(flow)
+                    and self.can_reach_dst_host_port(flow)
+                    and self.is_allowed_endpoint(flow.request.method, flow.request.path)
                 ):
                     return self.process_request(flow)
             except ForbiddenException as ex:
@@ -186,7 +227,9 @@ class MispGuard:
         if not (self.url_is_allowed(flow) or self.domain_is_allowed(flow)):
             try:
                 flow = self.enrich_flow(flow)
-                if self.can_reach_compartment(flow):
+                if self.can_reach_compartment(flow) and self.can_reach_dst_host_port(
+                    flow
+                ):
                     return self.process_response(flow)
             except ForbiddenException as ex:
                 logger.error(ex)
@@ -361,7 +404,6 @@ class MispGuard:
         ):
             try:
                 analyst_data = flow.request.json()
-                logger.debug(analyst_data)
             except Exception as ex:
                 return self.forbidden(flow, str(ex))
 
@@ -696,7 +738,9 @@ class MispGuard:
             if tag["name"].startswith(required_taxonomy + ":"):
                 # if there are allowed tags, check if the tag is allowed
                 # otherwise any tag of this taxonomy is ok
-                if len(allowed_tags) == 0 or tag["name"] in allowed_tags:
+                if len(allowed_tags) == 0 or tag["name"].lower() in [
+                    allowed_tag.lower() for allowed_tag in allowed_tags
+                ]:
                     return True
 
         raise ForbiddenException(
@@ -706,13 +750,16 @@ class MispGuard:
     def check_blocked_event_tags(self, taxonomies_rules: dict, event: dict) -> None:
         if "Tag" in event["Event"]:
             for tag in event["Event"]["Tag"]:
-                if tag["name"] in taxonomies_rules["blocked_tags"]:
+                if tag["name"].lower() in [
+                    blocked_tag.lower()
+                    for blocked_tag in taxonomies_rules["blocked_tags"]
+                ]:
                     raise ForbiddenException("event has blocked tag: %s" % tag["name"])
 
     def check_blocked_event_distribution_levels(
         self, blocked_distribution_levels: list, event: dict
     ) -> None:
-        if event["Event"]["distribution"] in blocked_distribution_levels:
+        if str(event["Event"]["distribution"]) in blocked_distribution_levels:
             raise ForbiddenException(
                 "event has blocked distribution level: %s"
                 % event["Event"]["distribution"]
@@ -731,7 +778,7 @@ class MispGuard:
     def check_blocked_event_report_distribution_levels(
         self, blocked_distribution_levels: list, report: dict
     ) -> None:
-        if report["distribution"] in blocked_distribution_levels:
+        if str(report["distribution"]) in blocked_distribution_levels:
             raise ForbiddenException(
                 "event report has blocked distribution level: %s"
                 % report["distribution"]
@@ -754,7 +801,10 @@ class MispGuard:
     ) -> None:
         if taxonomies_rules["blocked_tags"] and "Tag" in attribute:
             for tag in attribute["Tag"]:
-                if tag["name"] in taxonomies_rules["blocked_tags"]:
+                if tag["name"].lower() in [
+                    blocked_tag.lower()
+                    for blocked_tag in taxonomies_rules["blocked_tags"]
+                ]:
                     raise ForbiddenException(
                         "attribute with a blocked tag: %s" % tag["name"]
                     )
@@ -764,7 +814,7 @@ class MispGuard:
     ) -> None:
         if (
             "distribution" in attribute
-            and attribute["distribution"] in blocked_distribution_levels
+            and str(attribute["distribution"]) in blocked_distribution_levels
         ):
             raise ForbiddenException(
                 "attribute with a blocked distribution level: %s"
@@ -775,7 +825,10 @@ class MispGuard:
         self, blocked_sharing_groups_uuids: list, attribute: dict
     ) -> None:
         if "SharingGroup" in attribute:
-            if attribute["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+            if attribute["SharingGroup"]["uuid"].lower() in [
+                blocked_sharing_groups_uuid.lower()
+                for blocked_sharing_groups_uuid in blocked_sharing_groups_uuids
+            ]:
                 raise ForbiddenException(
                     "attribute with a blocked sharing group uuid: %s"
                     % attribute["SharingGroup"]["uuid"]
@@ -784,7 +837,10 @@ class MispGuard:
     def check_blocked_attribute_types(
         self, blocked_attribute_types: list, attribute: dict
     ) -> None:
-        if attribute["type"] in blocked_attribute_types:
+        if attribute["type"].lower() in [
+            blocked_attribute_type.lower()
+            for blocked_attribute_type in blocked_attribute_types
+        ]:
             raise ForbiddenException(
                 "attribute with a blocked type: %s" % attribute["type"]
             )
@@ -800,7 +856,7 @@ class MispGuard:
     def check_blocked_object_distribution_levels(
         self, blocked_distribution_levels: list, object: dict
     ) -> None:
-        if object["distribution"] in blocked_distribution_levels:
+        if str(object["distribution"]) in blocked_distribution_levels:
             raise ForbiddenException(
                 "object with a blocked distribution level: %s" % object["distribution"]
             )
@@ -809,7 +865,10 @@ class MispGuard:
         self, blocked_sharing_groups_uuids: list, object: dict
     ) -> None:
         if "SharingGroup" in object:
-            if object["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+            if object["SharingGroup"]["uuid"].lower() in [
+                blocked_sharing_groups_uuid.lower()
+                for blocked_sharing_groups_uuid in blocked_sharing_groups_uuids
+            ]:
                 raise ForbiddenException(
                     "object with a blocked sharing group uuid: %s"
                     % object["SharingGroup"]["uuid"]
@@ -860,14 +919,16 @@ class MispGuard:
     def check_blocked_object_types(
         self, blocked_object_types: list, object: dict
     ) -> None:
-        if object["name"] in blocked_object_types:
+        if object["name"].lower() in [
+            blocked_object_type.lower() for blocked_object_type in blocked_object_types
+        ]:
             raise ForbiddenException("object with a blocked type: %s" % object["name"])
 
     def check_blocked_galaxy_distribution_levels(
         self, blocked_distribution_levels: list, galaxy_cluster: dict
     ) -> None:
         if (
-            galaxy_cluster["GalaxyCluster"]["distribution"]
+            str(galaxy_cluster["GalaxyCluster"]["distribution"])
             in blocked_distribution_levels
         ):
             raise ForbiddenException(
@@ -878,7 +939,7 @@ class MispGuard:
     def check_blocked_analyst_data_distribution_levels(
         self, blocked_distribution_levels: list, analyst_data: dict
     ) -> None:
-        if analyst_data["distribution"] in blocked_distribution_levels:
+        if str(analyst_data["distribution"]) in blocked_distribution_levels:
             raise ForbiddenException(
                 "analyst data has blocked distribution level: %s"
                 % analyst_data["distribution"]
@@ -930,6 +991,26 @@ class MispGuard:
             )
 
         return self.config["instances_host_mapping"][flow.request.host]
+
+    @lru_cache
+    def can_reach_dst_host_port(self, flow: MISPHTTPFlow) -> bool:
+        logger.debug(
+            "host reach check - src: %s, dst: %s:%d"
+            % (flow.src_instance_id, flow.dst_instance_id, flow.request.port)
+        )
+
+        if flow.request.port == self.config["instances"][flow.dst_instance_id]["port"]:
+            return True
+
+        logger.error(
+            "request blocked: [%s]%s - %s"
+            % (
+                flow.request.method,
+                flow.request.path,
+                "destination port is not allowed",
+            )
+        )
+        return False
 
     @lru_cache
     def can_reach_compartment(self, flow: MISPHTTPFlow) -> bool:

@@ -911,8 +911,7 @@ class MispGuard:
         self, blocked_object_types: list, object: dict
     ) -> None:
         if object["name"].lower() in [
-            blocked_object_types.lower()
-            for blocked_object_types in blocked_object_types
+            blocked_object_type.lower() for blocked_object_type in blocked_object_types
         ]:
             raise ForbiddenException("object with a blocked type: %s" % object["name"])
 

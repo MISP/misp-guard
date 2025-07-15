@@ -769,7 +769,7 @@ class MispGuard:
         self, blocked_sharing_groups_uuids: list, event: dict
     ) -> None:
         if blocked_sharing_groups_uuids and "SharingGroup" in event["Event"]:
-            if event["Event"]["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+            if event["Event"]["SharingGroup"]["uuid"].lower() in [blocked_sharing_groups_uuid.lower() for blocked_sharing_groups_uuid in blocked_sharing_groups_uuids]:
                 raise ForbiddenException(
                     "event has blocked sharing group uuid: %s"
                     % event["Event"]["SharingGroup"]["uuid"]

@@ -834,7 +834,10 @@ class MispGuard:
     def check_blocked_attribute_types(
         self, blocked_attribute_types: list, attribute: dict
     ) -> None:
-        if attribute["type"] in blocked_attribute_types:
+        if attribute["type"].lower() in [
+            blocked_attribute_type.lower()
+            for blocked_attribute_type in blocked_attribute_types
+        ]:
             raise ForbiddenException(
                 "attribute with a blocked type: %s" % attribute["type"]
             )

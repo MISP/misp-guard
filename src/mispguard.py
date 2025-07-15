@@ -825,7 +825,10 @@ class MispGuard:
         self, blocked_sharing_groups_uuids: list, attribute: dict
     ) -> None:
         if "SharingGroup" in attribute:
-            if attribute["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+            if attribute["SharingGroup"]["uuid"].lower() in [
+                blocked_sharing_groups_uuid.lower()
+                for blocked_sharing_groups_uuid in blocked_sharing_groups_uuids
+            ]:
                 raise ForbiddenException(
                     "attribute with a blocked sharing group uuid: %s"
                     % attribute["SharingGroup"]["uuid"]
@@ -862,7 +865,10 @@ class MispGuard:
         self, blocked_sharing_groups_uuids: list, object: dict
     ) -> None:
         if "SharingGroup" in object:
-            if object["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+            if object["SharingGroup"]["uuid"].lower() in [
+                blocked_sharing_groups_uuid.lower()
+                for blocked_sharing_groups_uuid in blocked_sharing_groups_uuids
+            ]:
                 raise ForbiddenException(
                     "object with a blocked sharing group uuid: %s"
                     % object["SharingGroup"]["uuid"]

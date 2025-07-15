@@ -1,7 +1,22 @@
 # misp-guard
-`misp-guard` is a [mitmproxy](https://mitmproxy.org/) addon that inspects the synchronization traffic (via `PUSH` or `PULL`) between different MISP instances and applies a set of customizable rules defined in a JSON file.
+`misp-guard` is a [mitmproxy](https://mitmproxy.org/) addon designed to apply configurable filters that prevent the unintentional leakage of sensitive threat intelligence data while facilitating controlled information sharing.
+
+`misp-guard` functions as a proxy specifically designed to interact with and understand the MISP synchronization protocol. It monitors communications between MISP instances, allowing for real-time inspection and enforcement of security policies. MISP Guard effectively blocks incoming or outgoing data that matches configured filtering rules, ensuring sensitive or restricted information is not unintentionally shared.
 
 > **NOTE: By default this addon will block all outgoing HTTP requests that are not required during a MISP server sync. However, individual URLs or domains can be allowed if necessary.**
+
+## Objectives
+To prevent data leakage in high-security environments such as military networks or critical infrastructure systems, `misp-guard` plays a crucial role by acting as a configurable enforcement layer during MISP instance synchronization. Its fine-grained filtering capabilities allow organizations to maintain strict control over what information is shared, ensuring compliance with compartmentalization policies and mitigating the risk of accidental data exposure.
+
+Supported filters include:  
+- **Compartment Rules**: Restrict data sharing based on predefined compartmentalization policies.  
+- **Taxonomy Rules**: Control synchronization by enforcing taxonomy-specific filtering.  
+- **Blocked Distribution Levels**: Prevent data with specific distribution levels from being shared.  
+- **Blocked Sharing Groups**: Exclude data linked to restricted sharing groups.  
+- **Blocked Attribute Types**: Filter specific attribute types from synchronization.  
+- **Blocked Attribute Categories**: Restrict data belonging to selected attribute categories.  
+- **Blocked Object Types**: Prohibit synchronization of specific object types.  
+- **URL Allowlists**: Permit only explicitly approved URLs to pass through.  
 
 ## PUSH
 ```mermaid

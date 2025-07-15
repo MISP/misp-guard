@@ -175,7 +175,7 @@ class MispGuard:
         dst_host, dst_port = data.server.address
 
         if dst_host in self.config["allowlist"]["domains"]:
-            logger.error(f"domain {dst_host} was allowed by the allowlist")
+            logger.debug(f"domain {dst_host} was allowed by the allowlist")
             return None
 
         if dst_host in self.config["instances_host_mapping"]:

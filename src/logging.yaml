@@ -13,14 +13,14 @@ handlers:
     stream: ext://sys.stdout
   file:
     class: logging.handlers.TimedRotatingFileHandler
-    level: DEBUG
+    level: INFO
     formatter: simple
     when: D
     backupCount: 5
     filename: ./logs/misp-guard.log
 loggers:
   root:
-    level: DEBUG
+    level: INFO
     handlers: [console, file]
 watchdog:
   level: ERROR

@@ -244,3 +244,24 @@ Done, outgoing MISP sync requests will be inspected and dropped according to the
  $ src src/
  $ pytest
  ```
+
+### Docker
+You can also run `misp-guard` using the `misp-docker/misp-guard`.
+
+You need to mount a valid `config.json`, use the [misp-docker](https://github.com/MISP/misp-docker) sample [config.json](https://github.com/MISP/misp-docker/blob/master/guard/config.json) file as the `misp-guard` container **relies on the a hardcoded instance named `misp_container` to replace the IP provided.**
+
+Example:
+```bash
+docker run --name misp-guard \
+  -e MISP_IP=172.19.0.7 \
+  -e GUARD_PORT=8888 \
+  -e GUARD_ARGS="--ssl-insecure -v" \
+  -p 8888:8888 \
+  -v /home/user/misp-guard/src/config.json:/config.json:ro \
+  ghcr.io/misp/misp-docker/misp-guard:latest
+```
+
+Environment variables:
+* **MISP_IP**: The IP address of MISP instance that will be placed behind the `misp-guard` proxy.
+* **GUARD_PORT**: Port `mitmproxy` will be running, has to match `Proxy.port` MISP Setting.
+* **GUARD_ARGS**: Additional arguments to be sent to the `mitmproxy` utility.

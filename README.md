@@ -1,4 +1,5 @@
-# misp-guard
+![](MISP-guard-hori-color.png)
+
 `misp-guard` is a [mitmproxy](https://mitmproxy.org/) addon designed to apply configurable filters that prevent the unintentional leakage of sensitive threat intelligence data while facilitating controlled information sharing.
 
 `misp-guard` functions as a proxy specifically designed to interact with and understand the MISP synchronization protocol. It monitors communications between MISP instances, allowing for real-time inspection and enforcement of security policies. MISP Guard effectively blocks incoming or outgoing data that matches configured filtering rules, ensuring sensitive or restricted information is not unintentionally shared.

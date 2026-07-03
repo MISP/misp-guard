@@ -555,10 +555,10 @@ class MispGuard:
 
                 if "Relationship" in elem:
                     self.check_analyst_relationship_rules(rules, elem["Relationship"])
-
-                return None
             except ForbiddenException as ex:
                 return self.forbidden(flow, str(ex))
+
+        return None
 
     def check_event_level_rules(self, rules: dict, event: dict) -> None:
         logger.debug("checking event level rules")

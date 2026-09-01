@@ -90,7 +90,7 @@ The evaluation covers MISP Guard version 1 (v1) and its minor releases, focusing
 
 Version 1.3 extends the TOE with the ingestion of remote MISP feeds and with the optional refreshal of the synchronization user authentication key. Both are additions that preserve the core functions and objectives of the TOE, they reuse the same filtering engine, configuration mechanism and audit logging, and are therefore included in the scope of this evaluation.  
 
-The exact revision covered by this document is the `v1.3` release of the repository, tag `v1.3`, commit `TODO_V13_COMMIT`. The delivery and configuration management procedures applying to it are described in Sections 10.1 and 10.2.  
+The exact revision covered by this document is the `v1.3` release of the repository, tag `v1.3`, commit `b0809eae21a75c31b8c581c41bcc56f270459ac9`. The delivery and configuration management procedures applying to it are described in Sections 10.1 and 10.2.  
 
 The evaluation excludes the **mitmproxy** dependency, which serves as a foundational component for traffic interception and inspection. It is assumed that mitmproxy functions correctly and as intended.  
 

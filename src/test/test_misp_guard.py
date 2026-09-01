@@ -5,6 +5,7 @@ from mitmproxy.test import taddons
 from mitmproxy.test import tutils
 from mitmproxy.http import Headers
 from mitmproxy import connection
+from mitmproxy.proxy import server_hooks
 from .. import mispguard
 
 
@@ -18,6 +19,16 @@ def load_push_scenarios():
     with open("./test/test_push_scenarios.json", "r") as f:
         scenarios = json.loads(f.read())
     return scenarios
+
+
+def mispguard_server_hooks_data(host: str, port: int):
+    """
+    Builds the `server_connect` hook data for the given destination.
+    """
+    server = connection.Server(address=(host, port))
+    return server_hooks.ServerConnectionHookData(server=server, client=connection.Client(
+        peername=("10.0.0.1", 22), sockname=("", 0)
+    ))
 
 
 class TestMispGuard:
@@ -426,6 +437,449 @@ class TestMispGuard:
         )
 
         assert flow.response.status_code == 403
+
+    def feed_flow(self, path: str, fixture_file: str = None, status_code: int = 200,
+                  host: str = "feed1.com", port: int = 443, method: bytes = b"GET",
+                  client_ip: str = "10.0.0.1"):
+        """
+        Builds a feed fetch flow, optionally with the response body loaded from
+        a fixture file.
+        """
+        feed_req = tutils.treq(port=port, host=host, path=path, method=method)
+
+        content = b""
+        if fixture_file is not None:
+            with open(fixture_file, "rb") as f:
+                content = f.read()
+
+        feed_resp = tutils.tresp(
+            status_code=status_code,
+            headers=Headers(content_type="application/json"),
+            content=content,
+        )
+
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = (client_ip, "22")
+
+        return flow
+
+    @pytest.mark.asyncio
+    async def test_feed_manifest_blocked_events_are_removed(self, caplog):
+        """
+        Test that the feed events matching a block rule are removed from the
+        feed manifest.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow(
+            "/doc/misp/feed-osint/manifest.json",
+            "./test/fixtures/test_feed_manifest.json",
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "received feed request - [GET]/doc/misp/feed-osint/manifest.json"
+            in caplog.text
+        )
+        assert (
+            "event 1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a002 removed from the `feed_1` "
+            "feed manifest - event has blocked tag: tlp:red" in caplog.text
+        )
+        assert "1 of 3 events removed from the `feed_1` feed manifest" in caplog.text
+        assert flow.response.status_code == 200
+
+        # the rewritten body must stay consistent with the response headers
+        assert flow.response.headers["content-length"] == str(
+            len(flow.response.raw_content)
+        )
+
+        manifest = json.loads(flow.response.text)
+        assert list(manifest.keys()) == [
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001",
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a003",
+        ]
+
+    @pytest.mark.asyncio
+    async def test_feed_manifest_non_blocked_events_are_untouched(self, caplog):
+        """
+        Test that a feed manifest without any blocked event is passed through
+        unmodified.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        with open("./test/fixtures/test_feed_manifest.json", "rb") as f:
+            fixture = f.read()
+
+        # `feed_2` has no blocked tags and allows tlp:clear/tlp:white, the
+        # tlp:red event of the fixture is dropped by the required taxonomy check
+        manifest = json.loads(fixture)
+        del manifest["1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a002"]
+
+        feed_req = tutils.treq(
+            port=443, host="feed2.com", path="/feeds/misp/manifest.json", method=b"GET"
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=json.dumps(manifest).encode(),
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "removed from the `feed_2` feed manifest" not in caplog.text
+        assert flow.response.status_code == 200
+        assert json.loads(flow.response.text) == manifest
+
+    @pytest.mark.asyncio
+    async def test_feed_manifest_required_taxonomies(self, caplog):
+        """
+        Test that the feed manifest required taxonomies rules are checked on the
+        event metadata.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        feed_req = tutils.treq(
+            port=443, host="feed2.com", path="/feeds/misp/manifest.json", method=b"GET"
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=json.dumps(
+                {
+                    "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a004": {
+                        "info": "OSINT - event without the required taxonomy",
+                        "Tag": [{"name": "type:OSINT"}],
+                    }
+                }
+            ).encode(),
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "event 1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a004 removed from the `feed_2` "
+            "feed manifest - event is missing required taxonomy: tlp" in caplog.text
+        )
+        assert flow.response.status_code == 200
+        assert json.loads(flow.response.text) == {}
+
+    @pytest.mark.asyncio
+    async def test_feed_event_non_blocked(self, caplog):
+        """
+        Test that a feed event not matching any block rule is passed through.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow(
+            "/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001.json",
+            "./test/fixtures/test_feed_event_non-blocked.json",
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "request blocked" not in caplog.text
+        assert flow.response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_feed_event_blocked_attribute_type(self, caplog):
+        """
+        Test that a feed event matching a block rule is blocked.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow(
+            "/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a003.json",
+            "./test/fixtures/test_feed_event_blocked_attribute_type.json",
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/"
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a003.json - attribute with a blocked "
+            "type: email" in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_event_signature_passthrough(self, caplog):
+        """
+        Test that the signature of a protected feed event is passed through.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        signature = (
+            b"-----BEGIN PGP SIGNATURE-----\n\nc2lnbmF0dXJl\n"
+            b"-----END PGP SIGNATURE-----\n"
+        )
+
+        feed_req = tutils.treq(
+            port=443,
+            host="feed1.com",
+            path="/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001.asc",
+            method=b"GET",
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="text/plain"),
+            content=signature,
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "received feed request - [GET]/doc/misp/feed-osint/"
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001.asc" in caplog.text
+        )
+        assert "`feed_1` feed event signature response, passthrough" in caplog.text
+        assert "request blocked" not in caplog.text
+        assert flow.response.status_code == 200
+        assert flow.response.content == signature
+
+    @pytest.mark.asyncio
+    async def test_feed_signature_of_non_event_is_blocked(self, caplog):
+        """
+        Test that only the signature of an event can be fetched.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow("/doc/misp/feed-osint/manifest.asc")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "rejecting non allowed feed request to /doc/misp/feed-osint/manifest.asc"
+            in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_cache_is_blocked_if_not_enabled(self, caplog):
+        """
+        Test that the feed cache is not fetchable if the feed does not have
+        `allow_caching` enabled.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow("/doc/misp/feed-osint/hashes.csv")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "endpoint /doc/misp/feed-osint/hashes.csv is not enabled for the `feed_1` "
+            "feed, set `allow_caching: true` to allow it" in caplog.text
+        )
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/hashes.csv - endpoint not "
+            "allowed" in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_cache_is_allowed_if_enabled(self, caplog):
+        """
+        Test that the feed cache is fetched as is if the feed has
+        `allow_caching` enabled, its content can not be filtered.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        cache = (
+            b"1cc7bcb1a0f04c2e8c1cb3e0b9f0a001,1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001\n"
+            b"1cc7bcb1a0f04c2e8c1cb3e0b9f0a002,1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a002\n"
+        )
+
+        feed_req = tutils.treq(
+            port=443, host="feed2.com", path="/feeds/misp/hashes.csv", method=b"GET"
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="text/csv"),
+            content=cache,
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "received feed request - [GET]/feeds/misp/hashes.csv" in caplog.text
+        assert "`feed_2` feed cache response, passthrough" in caplog.text
+        assert "request blocked" not in caplog.text
+        assert flow.response.status_code == 200
+        assert flow.response.content == cache
+
+    @pytest.mark.asyncio
+    async def test_feed_cache_wrong_method_is_blocked(self, caplog):
+        """
+        Test that the feed cache can only be fetched with a GET request.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow("/feeds/misp/hashes.csv", host="feed2.com", method=b"POST")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "rejecting non allowed feed request to /feeds/misp/hashes.csv"
+            in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_non_allowed_endpoint_is_blocked(self, caplog):
+        """
+        Test that only the manifest and the event files of a feed can be fetched.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow("/doc/misp/feed-osint/hashes.txt")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "rejecting non allowed feed request to /doc/misp/feed-osint/hashes.txt"
+            in caplog.text
+        )
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/hashes.txt - endpoint not "
+            "allowed" in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_request_from_unknown_src_host_is_blocked(self, caplog):
+        """
+        Test that only the configured instances can fetch a feed.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow(
+            "/doc/misp/feed-osint/manifest.json",
+            "./test/fixtures/test_feed_manifest.json",
+            client_ip="99.99.99.99",
+        )
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/manifest.json - source host "
+            "99.99.99.99 does not exist in instances hosts mapping" in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_request_to_non_feed_path_is_blocked(self, caplog):
+        """
+        Test that a request to a feed host outside of the configured feed url is
+        blocked as any other non sync related request.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow("/doc/misp/other-feed/manifest.json")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "destination host feed1.com does not exist in instances hosts mapping"
+            in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_non_200_response_passthrough(self, caplog):
+        """
+        Test that a feed response without event data is passed through.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow(
+            "/doc/misp/feed-osint/manifest.json", status_code=304
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "request blocked" not in caplog.text
+        assert flow.response.status_code == 304
+
+    @pytest.mark.asyncio
+    async def test_feed_invalid_manifest_is_blocked(self, caplog):
+        """
+        Test that a feed manifest that is not a JSON document is blocked.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        feed_req = tutils.treq(
+            port=443,
+            host="feed1.com",
+            path="/doc/misp/feed-osint/manifest.json",
+            method=b"GET",
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="text/html"),
+            content=b"<html>not a manifest</html>",
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/manifest.json - invalid JSON "
+            "body" in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_host_connection_is_allowed(self, caplog):
+        """
+        Test that connections to a configured feed host are allowed.
+        """
+        caplog.set_level("DEBUG")
+        mispguard = self.load_mispguard()
+
+        data = mispguard_server_hooks_data("feed1.com", 443)
+        mispguard.server_connect(data)
+        assert data.server.error is None
+
+        data = mispguard_server_hooks_data("feed1.com", 4444)
+        mispguard.server_connect(data)
+        assert data.server.error == "connection not allowed."
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("scenario", load_pull_scenarios(), ids=lambda s: s["name"])

@@ -1,0 +1,38 @@
+{
+    "Event": {
+        "analysis": "2",
+        "date": "2026-01-15",
+        "extends_uuid": "",
+        "info": "OSINT - non blocked event",
+        "publish_timestamp": "1768435300",
+        "published": true,
+        "threat_level_id": "2",
+        "timestamp": "1768435200",
+        "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001",
+        "Orgc": {
+            "name": "CIRCL",
+            "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f"
+        },
+        "Tag": [
+            {
+                "colour": "#ffffff",
+                "local": false,
+                "name": "tlp:white",
+                "relationship_type": ""
+            }
+        ],
+        "Attribute": [
+            {
+                "category": "Network activity",
+                "comment": "",
+                "deleted": false,
+                "disable_correlation": false,
+                "timestamp": "1768435200",
+                "to_ids": true,
+                "type": "domain",
+                "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0b001",
+                "value": "evil.example.com"
+            }
+        ]
+    }
+}

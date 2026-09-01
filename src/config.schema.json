@@ -182,6 +182,128 @@
                     ]
                 }
             }
+        },
+        "feeds": {
+            "type": "object",
+            "patternProperties": {
+                "^[a-z0-9_]+$": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "misp"
+                            ],
+                            "description": "Feed format, only `misp` format feeds are supported."
+                        },
+                        "url": {
+                            "type": "string",
+                            "format": "uri",
+                            "description": "Base url of the feed, the directory holding the `manifest.json` file."
+                        },
+                        "allow_caching": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Allows [GET]<FEED_URL>/hashes.csv requests, the feed cache used by MISP for the feed correlation lookups."
+                        },
+                        "taxonomies_rules": {
+                            "type": "object",
+                            "properties": {
+                                "required_taxonomies": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "examples": [
+                                            "tlp"
+                                        ]
+                                    }
+                                },
+                                "allowed_tags": {
+                                    "type": "object",
+                                    "patternProperties": {
+                                        "^[a-z0-9_]+$": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "examples": [
+                                                    "tlp:clear"
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
+                                "blocked_tags": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "examples": [
+                                            "tlp:red"
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "blocked_distribution_levels": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "0",
+                                    "1",
+                                    "2",
+                                    "3",
+                                    "4",
+                                    "5"
+                                ]
+                            }
+                        },
+                        "blocked_sharing_groups_uuids": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "format": "uuid"
+                            }
+                        },
+                        "blocked_attribute_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "examples": [
+                                    "passport-number"
+                                ]
+                            }
+                        },
+                        "blocked_attribute_categories": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "examples": [
+                                    "Person"
+                                ]
+                            }
+                        },
+                        "blocked_object_types": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "examples": [
+                                    "person"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "url",
+                        "taxonomies_rules",
+                        "blocked_distribution_levels",
+                        "blocked_sharing_groups_uuids",
+                        "blocked_attribute_types",
+                        "blocked_attribute_categories",
+                        "blocked_object_types"
+                    ]
+                }
+            }
         }
     }
 }

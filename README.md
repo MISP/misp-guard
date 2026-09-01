@@ -33,6 +33,10 @@ To prevent data leakage in high-security environments such as military networks 
   * `urls` The entire URL is checked and only exact calls are allowed.
   * `domains` In contrast, only the domain is checked and any website behind the domain can be queried. Should only be used if adding exact URLs is not possible.
 
+**Instance settings**
+
+* `allow_sync_auth_key_refresh`: If set to `true`, `[POST]/users/resetauthkey/me` requests to this instance are allowed, so the sync user authentication key can be refreshed. Defaults to `false`, meaning these requests are blocked as any other non sync related endpoint. Note that this setting is evaluated on the **destination** instance, the one owning the authentication key being refreshed.
+
 See sample config [here](src/test/test_config.json).
 
 ## PUSH

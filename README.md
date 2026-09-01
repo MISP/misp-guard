@@ -43,6 +43,13 @@ To prevent data leakage in high-security environments such as military networks 
 
 See sample config [here](src/test/test_config.json).
 
+## Evaluation
+`misp-guard` has been evaluated at Evaluation Assurance Level 2 (EAL 2) under the Common Criteria framework, covering its filtering capabilities, logging mechanisms, configuration options and integration with MISP instances.
+
+* [MISP Guard - Common Criteria EAL 2 Evaluation](docs/Common%20Criteria%20EAL%202%20Evaluation.md)
+
+The report documents the target of evaluation, the security target, the functional specification of every supported filtering rule, the high level design, the test plan and results, and the vulnerability assessment conducted on the addon.
+
 ## PUSH
 ```mermaid
 sequenceDiagram

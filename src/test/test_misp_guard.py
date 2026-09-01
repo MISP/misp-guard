@@ -116,6 +116,89 @@ class TestMispGuard:
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
+    async def test_sync_auth_key_refresh_is_allowed_if_enabled(self, caplog):
+        """
+        Test that [POST]/users/resetauthkey/me is allowed if the destination
+        instance has `allow_sync_auth_key_refresh` enabled.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        reset_auth_key_req = tutils.treq(
+            port=443,
+            host="instance1-comp1.com",
+            path="/users/resetauthkey/me",
+            method=b"POST",
+        )
+
+        flow = tflow.tflow(req=reset_auth_key_req)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "received request - [POST]/users/resetauthkey/me" in caplog.text
+        assert flow.response is None
+
+    @pytest.mark.asyncio
+    async def test_sync_auth_key_refresh_is_blocked_if_not_enabled(self, caplog):
+        """
+        Test that [POST]/users/resetauthkey/me is blocked if the destination
+        instance does not have `allow_sync_auth_key_refresh` enabled.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        reset_auth_key_req = tutils.treq(
+            port=443,
+            host="instance2-comp1.com",
+            path="/users/resetauthkey/me",
+            method=b"POST",
+        )
+
+        flow = tflow.tflow(req=reset_auth_key_req)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "endpoint /users/resetauthkey/me is not enabled for instance instance_1_2, "
+            "set `allow_sync_auth_key_refresh: true` to allow it" in caplog.text
+        )
+        assert (
+            "request blocked: [POST]/users/resetauthkey/me - endpoint not allowed"
+            in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_sync_auth_key_refresh_other_user_is_blocked(self, caplog):
+        """
+        Test that only the `me` auth key can be refreshed, even if the
+        destination instance has `allow_sync_auth_key_refresh` enabled.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        reset_auth_key_req = tutils.treq(
+            port=443,
+            host="instance1-comp1.com",
+            path="/users/resetauthkey/1",
+            method=b"POST",
+        )
+
+        flow = tflow.tflow(req=reset_auth_key_req)
+        flow.client_conn.peername = ("20.0.0.2", "22")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "rejecting non allowed request to /users/resetauthkey/1" in caplog.text
+        assert (
+            "request blocked: [POST]/users/resetauthkey/1 - endpoint not allowed"
+            in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
     async def test_allowed_domain_from_unknown_src_is_blocked(self, caplog):
         caplog.set_level("INFO")
         mispguard = self.load_mispguard()

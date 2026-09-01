@@ -1,7 +1,7 @@
 {
     "allowlist": {
-        "urls":  [
-                "http://www.dan.me.uk:443/torlist/?exit"
+        "urls": [
+            "http://www.dan.me.uk:443/torlist/?exit"
         ],
         "domains": [
             "snort-org-site.s3.amazonaws.com"
@@ -37,6 +37,7 @@
             "port": 443,
             "compartment_id": "compartment_1",
             "affiliation": "",
+            "allow_sync_auth_key_refresh": true,
             "taxonomies_rules": {
                 "required_taxonomies": [],
                 "allowed_tags": {},
@@ -67,6 +68,7 @@
             "port": 443,
             "compartment_id": "compartment_1",
             "affiliation": "",
+            "allow_sync_auth_key_refresh": false,
             "taxonomies_rules": {
                 "required_taxonomies": [],
                 "allowed_tags": {},
@@ -97,6 +99,7 @@
             "port": 443,
             "compartment_id": "compartment_2",
             "affiliation": "",
+            "allow_sync_auth_key_refresh": false,
             "taxonomies_rules": {
                 "required_taxonomies": [],
                 "allowed_tags": {},
@@ -127,6 +130,7 @@
             "port": 443,
             "compartment_id": "compartment_2",
             "affiliation": "",
+            "allow_sync_auth_key_refresh": false,
             "taxonomies_rules": {
                 "required_taxonomies": [],
                 "allowed_tags": {},
@@ -157,6 +161,7 @@
             "port": 443,
             "compartment_id": "compartment_3",
             "affiliation": "",
+            "allow_sync_auth_key_refresh": false,
             "taxonomies_rules": {
                 "required_taxonomies": [],
                 "allowed_tags": {},
@@ -187,6 +192,7 @@
             "port": 443,
             "compartment_id": "compartment_4",
             "affiliation": "",
+            "allow_sync_auth_key_refresh": false,
             "taxonomies_rules": {
                 "required_taxonomies": [
                     "tlp"

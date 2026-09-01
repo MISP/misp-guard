@@ -133,6 +133,15 @@ class MispGuard:
                 "methods": ["POST"],
             },
         ]
+        # endpoints only allowed if explicitly enabled in the destination
+        # instance configuration
+        self.conditional_endpoints = [
+            {
+                "regex": r"^\/users\/resetauthkey\/me$",
+                "methods": ["POST"],
+                "setting": "allow_sync_auth_key_refresh",
+            },
+        ]
 
     def configure(self, updated):
         if ctx.options.config and exists(ctx.options.config):
@@ -197,7 +206,10 @@ class MispGuard:
                 if (
                     self.can_reach_compartment(flow)
                     and self.can_reach_dst_host_port(flow)
-                    and self.is_allowed_endpoint(flow.request.method, flow.request.path)
+                    and (
+                        self.is_allowed_endpoint(flow.request.method, flow.request.path)
+                        or self.is_allowed_conditional_endpoint(flow)
+                    )
                 ):
                     return self.process_request(flow)
             except ForbiddenException as ex:
@@ -1036,6 +1048,29 @@ class MispGuard:
         for endpoint in self.allowed_endpoints:
             if re.match(endpoint["regex"], path) and method in endpoint["methods"]:
                 return True
+
+        return False
+
+    def is_allowed_conditional_endpoint(self, flow: MISPHTTPFlow) -> bool:
+        """
+        Checks the endpoints that are only allowed if the related setting is
+        enabled in the destination instance configuration.
+        """
+        for endpoint in self.conditional_endpoints:
+            if (
+                re.match(endpoint["regex"], flow.request.path)
+                and flow.request.method in endpoint["methods"]
+            ):
+                if self.config["instances"][flow.dst_instance_id].get(
+                    endpoint["setting"], False
+                ):
+                    return True
+
+                logger.error(
+                    "endpoint %s is not enabled for instance %s, set `%s: true` to allow it"
+                    % (flow.request.path, flow.dst_instance_id, endpoint["setting"])
+                )
+                return False
 
         return False
 

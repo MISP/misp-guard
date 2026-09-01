@@ -76,6 +76,11 @@
                         "affiliation": {
                             "type": "string"
                         },
+                        "allow_sync_auth_key_refresh": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Allows [POST]/users/resetauthkey/me requests to this instance, used to refresh the sync user authentication key."
+                        },
                         "taxonomies_rules": {
                             "type": "object",
                             "properties": {

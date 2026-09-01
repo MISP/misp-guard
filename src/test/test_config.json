@@ -226,5 +226,57 @@
                 "person"
             ]
         }
+    },
+    "feeds": {
+        "feed_1": {
+            "type": "misp",
+            "url": "https://feed1.com/doc/misp/feed-osint",
+            "allow_caching": false,
+            "taxonomies_rules": {
+                "required_taxonomies": [],
+                "allowed_tags": {},
+                "blocked_tags": [
+                    "tlp:red"
+                ]
+            },
+            "blocked_distribution_levels": [
+                "0"
+            ],
+            "blocked_sharing_groups_uuids": [
+                "b9e656ba-b9c0-4506-83ed-7b54b43a57cb"
+            ],
+            "blocked_attribute_types": [
+                "passport-number",
+                "email"
+            ],
+            "blocked_attribute_categories": [
+                "Person"
+            ],
+            "blocked_object_types": [
+                "person"
+            ]
+        },
+        "feed_2": {
+            "type": "misp",
+            "url": "https://feed2.com/feeds/misp",
+            "allow_caching": true,
+            "taxonomies_rules": {
+                "required_taxonomies": [
+                    "tlp"
+                ],
+                "allowed_tags": {
+                    "tlp": [
+                        "tlp:clear",
+                        "tlp:white"
+                    ]
+                },
+                "blocked_tags": []
+            },
+            "blocked_distribution_levels": [],
+            "blocked_sharing_groups_uuids": [],
+            "blocked_attribute_types": [],
+            "blocked_attribute_categories": [],
+            "blocked_object_types": []
+        }
     }
 }

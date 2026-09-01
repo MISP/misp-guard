@@ -33,6 +33,10 @@ To prevent data leakage in high-security environments such as military networks 
   * `urls` The entire URL is checked and only exact calls are allowed.
   * `domains` In contrast, only the domain is checked and any website behind the domain can be queried. Should only be used if adding exact URLs is not possible.
 
+**Feeds**
+
+* Remote feeds can be configured under the top level `feeds` element, see the [Feeds](#feeds) section below.
+
 **Instance settings**
 
 * `allow_sync_auth_key_refresh`: If set to `true`, `[POST]/users/resetauthkey/me` requests to this instance are allowed, so the sync user authentication key can be refreshed. Defaults to `false`, meaning these requests are blocked as any other non sync related endpoint. Note that this setting is evaluated on the **destination** instance, the one owning the authentication key being refreshed.
@@ -206,6 +210,90 @@ sequenceDiagram
 
 > **NOTE: The `MISP A` server needs to have the `misp-guard` hostname configured as the server hostname you are going to pull from, **not** the `MISP B` hostname.**
 
+
+## Feeds
+
+Remote feeds are configured under the top level `feeds` element, each feed defines its own set of block rules, using the same rules as the instances:
+
+```json
+"feeds": {
+    "feed_osint": {
+        "type": "misp",
+        "url": "https://www.circl.lu/doc/misp/feed-osint",
+        "allow_caching": false,
+        "taxonomies_rules": {
+            "required_taxonomies": [],
+            "allowed_tags": {},
+            "blocked_tags": [
+                "tlp:red"
+            ]
+        },
+        "blocked_distribution_levels": [],
+        "blocked_sharing_groups_uuids": [],
+        "blocked_attribute_types": [],
+        "blocked_attribute_categories": [],
+        "blocked_object_types": []
+    }
+}
+```
+
+* `type`: Feed format, only `misp` format feeds are supported for now.
+* `url`: Base url of the feed, the directory holding the `manifest.json` file.
+* `allow_caching`: If set to `true`, `[GET]<FEED_URL>/hashes.csv` requests are allowed, so MISP can fill its feed cache used for the feed correlation lookups. Defaults to `false`.
+
+Only the `[GET]<FEED_URL>/manifest.json`, `[GET]<FEED_URL>/[UUID].json` and `[GET]<FEED_URL>/[UUID].asc` endpoints of a configured feed are allowed, plus `[GET]<FEED_URL>/hashes.csv` if `allow_caching` is enabled. Any other request to the feed host is rejected as any other non sync related request. Only the configured `instances` can fetch a feed.
+
+The `[UUID].asc` signature of a protected event is passed through, it holds no event data and the event it signs is either passed through untouched or rejected as a whole, so the signature validation done by MISP is not affected.
+
+> **NOTE: The feed cache (`hashes.csv`) only holds the md5 hashes of the attribute values and the uuid of the event they belong to, there are no tags, types, categories or distribution levels to match the block rules against, so its content is passed through as is. An event that the block rules would reject can still contribute its value hashes to the cache, which is why fetching it has to be explicitly enabled per feed.**
+
+```mermaid
+sequenceDiagram
+    participant MISP A
+    participant MISP Guard
+    participant Feed
+
+    rect rgb(191, 223, 255)
+    note right of MISP A: FETCH Feed
+
+    MISP A->>MISP Guard: [GET]/manifest.json
+    MISP Guard->>Feed: [GET]/manifest.json
+    Feed->>+MISP Guard: [GET]/manifest.json
+    note right of MISP Guard: The event metadata of the manifest is inspected and the events matching a block rule are removed from it
+    MISP Guard->>-MISP A: [GET]/manifest.json
+
+    MISP A->>MISP Guard: [GET]/[UUID].json
+    MISP Guard->>Feed: [GET]/[UUID].json
+    Feed->>+MISP Guard: [GET]/[UUID].json
+    note right of MISP Guard: The incoming event is inspected and rejected with 403 if any block rule matches
+    MISP Guard->>-MISP A: [GET]/[UUID].json
+
+    rect rgb(191, 223, 255)
+    note left of MISP Guard: Only for protected events
+    MISP A->>MISP Guard: [GET]/[UUID].asc
+    MISP Guard->>Feed: [GET]/[UUID].asc
+    Feed->>MISP Guard: [GET]/[UUID].asc
+    MISP Guard->>MISP A: [GET]/[UUID].asc
+    end
+    end
+
+    rect rgb(191, 223, 255)
+    note right of MISP A: CACHE Feed
+
+    MISP A->>+MISP Guard: [GET]/hashes.csv
+    note right of MISP Guard: Rejected with 403 unless the feed has `allow_caching` enabled, the feed cache content can not be filtered
+    MISP Guard->>-Feed: [GET]/hashes.csv
+    Feed->>MISP Guard: [GET]/hashes.csv
+    MISP Guard->>MISP A: [GET]/hashes.csv
+    end
+```
+
+The rules are checked in two stages:
+
+1. **Manifest**: the `manifest.json` document holds the metadata (tags, ...) of every event of the feed, the events matching a block rule are **removed from the manifest** so they are never fetched. The manifest metadata only carries the event tags, so in practice only the `taxonomies_rules` apply at this stage.
+2. **Event**: each `[UUID].json` event is inspected with the full set of block rules, the same way as an event pulled from another instance, and is rejected with a `403` if any rule matches.
+
+> **NOTE: Feed events do not carry a distribution level nor a sharing group, those rules only apply to the entities of the event that do define them.**
 
 
 ## Instructions

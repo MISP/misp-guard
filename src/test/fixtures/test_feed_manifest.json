@@ -1,0 +1,65 @@
+{
+    "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001": {
+        "Orgc": {
+            "name": "CIRCL",
+            "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f"
+        },
+        "Tag": [
+            {
+                "colour": "#004646",
+                "local": false,
+                "name": "type:OSINT",
+                "relationship_type": ""
+            },
+            {
+                "colour": "#ffffff",
+                "local": false,
+                "name": "tlp:white",
+                "relationship_type": ""
+            }
+        ],
+        "info": "OSINT - non blocked event",
+        "date": "2026-01-15",
+        "analysis": 2,
+        "threat_level_id": 2,
+        "timestamp": 1768435200
+    },
+    "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a002": {
+        "Orgc": {
+            "name": "CIRCL",
+            "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f"
+        },
+        "Tag": [
+            {
+                "colour": "#ff0000",
+                "local": false,
+                "name": "tlp:red",
+                "relationship_type": ""
+            }
+        ],
+        "info": "OSINT - event with a blocked tag",
+        "date": "2026-01-16",
+        "analysis": 2,
+        "threat_level_id": 2,
+        "timestamp": 1768521600
+    },
+    "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a003": {
+        "Orgc": {
+            "name": "CIRCL",
+            "uuid": "55f6ea5e-2c60-40e5-964f-47a8950d210f"
+        },
+        "Tag": [
+            {
+                "colour": "#ffffff",
+                "local": false,
+                "name": "tlp:clear",
+                "relationship_type": ""
+            }
+        ],
+        "info": "OSINT - another non blocked event",
+        "date": "2026-01-17",
+        "analysis": 2,
+        "threat_level_id": 2,
+        "timestamp": 1768608000
+    }
+}

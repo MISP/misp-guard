@@ -52,5 +52,24 @@
             "blocked_attribute_categories": [],
             "blocked_object_types": []
         }
+    },
+    "feeds": {
+        "feed_osint": {
+            "type": "misp",
+            "url": "https://www.circl.lu/doc/misp/feed-osint",
+            "allow_caching": false,
+            "taxonomies_rules": {
+                "required_taxonomies": [],
+                "allowed_tags": {},
+                "blocked_tags": [
+                    "tlp:red"
+                ]
+            },
+            "blocked_distribution_levels": [],
+            "blocked_sharing_groups_uuids": [],
+            "blocked_attribute_types": [],
+            "blocked_attribute_categories": [],
+            "blocked_object_types": []
+        }
     }
 }

@@ -10,6 +10,7 @@ from jsonschema import validate, Draft202012Validator
 import json
 import re
 from os.path import exists, abspath, dirname
+from urllib.parse import urlparse
 import logging
 import logging.config
 import yaml
@@ -76,6 +77,13 @@ class MISPHTTPFlow(http.HTTPFlow):
     is_analyst_note: bool = False
     is_analyst_opinion: bool = False
     is_analyst_relationship: bool = False
+    feed_id: str = None
+    feed_endpoint: dict = None
+    is_feed: bool = False
+    is_feed_manifest: bool = False
+    is_feed_event: bool = False
+    is_feed_event_signature: bool = False
+    is_feed_cache: bool = False
 
 
 class MispGuard:
@@ -133,6 +141,34 @@ class MispGuard:
                 "methods": ["POST"],
             },
         ]
+        # parsed `feeds` configuration, see `configure`
+        self.feeds = []
+        # endpoints allowed for `misp` type feeds, relative to the feed url,
+        # `setting` names the feed setting that has to be enabled to allow the
+        # endpoint
+        self.misp_feed_endpoints = [
+            {
+                "regex": r"^\/manifest\.json$",
+                "methods": ["GET"],
+                "flag": "is_feed_manifest",
+            },
+            {
+                "regex": r"^\/[\w\-]{36}\.json$",
+                "methods": ["GET"],
+                "flag": "is_feed_event",
+            },
+            {
+                "regex": r"^\/[\w\-]{36}\.asc$",
+                "methods": ["GET"],
+                "flag": "is_feed_event_signature",
+            },
+            {
+                "regex": r"^\/hashes\.csv$",
+                "methods": ["GET"],
+                "flag": "is_feed_cache",
+                "setting": "allow_caching",
+            },
+        ]
         # endpoints only allowed if explicitly enabled in the destination
         # instance configuration
         self.conditional_endpoints = [
@@ -165,6 +201,24 @@ class MispGuard:
                     ] = instance_id
                     self.config["instances_host_mapping"][instance["ip"]] = instance_id
 
+                # parse the configured feeds urls into host, port and base path
+                self.feeds = []
+                for feed_id, feed in self.config.get("feeds", {}).items():
+                    parsed_url = urlparse(feed["url"])
+                    self.feeds.append(
+                        {
+                            "id": feed_id,
+                            "type": feed["type"],
+                            "host": parsed_url.hostname,
+                            "port": parsed_url.port
+                            or (443 if parsed_url.scheme == "https" else 80),
+                            "path": parsed_url.path.rstrip("/"),
+                        }
+                    )
+
+                # match the most specific feed base path first
+                self.feeds.sort(key=lambda feed: len(feed["path"]), reverse=True)
+
             except Exception as e:
                 logger.error("failed to load config file: %s" % str(e))
                 exit(1)
@@ -180,12 +234,22 @@ class MispGuard:
     def load(self, loader):
         loader.add_option("config", str, "", "MISP Guard configuration file")
 
+    def done(self):
+        # addon shutdown hook, stops the configuration file watcher
+        self.observer.stop()
+        self.observer.join()
+
     def server_connect(self, data: server_hooks.ServerConnectionHookData):
         dst_host, dst_port = data.server.address
 
         if dst_host in self.config["allowlist"]["domains"]:
             logger.debug(f"domain {dst_host} was allowed by the allowlist")
             return None
+
+        for feed in self.feeds:
+            if dst_host == feed["host"] and dst_port == feed["port"]:
+                logger.debug(f"host {dst_host} is a configured feed host")
+                return None
 
         if dst_host in self.config["instances_host_mapping"]:
             dst_instance_id = self.config["instances_host_mapping"][dst_host]
@@ -200,6 +264,22 @@ class MispGuard:
         data.server.error = "connection not allowed."
 
     def request(self, flow: http.HTTPFlow) -> None:
+        feed = self.get_feed(flow)
+        if feed is not None:
+            try:
+                flow = self.enrich_feed_flow(flow, feed)
+                if self.is_allowed_feed_endpoint(flow):
+                    return self.process_feed_request(flow)
+            except ForbiddenException as ex:
+                logger.error(ex)
+                return self.forbidden(flow, str(ex))
+            except Exception as ex:
+                logger.error(ex)
+                return self.forbidden(flow, "unexpected error, rejecting request")
+
+            logger.error("rejecting non allowed feed request to %s" % flow.request.path)
+            return self.forbidden(flow)
+
         if not (self.url_is_allowed(flow) or self.domain_is_allowed(flow)):
             try:
                 flow = self.enrich_flow(flow)
@@ -236,6 +316,24 @@ class MispGuard:
                 return self.forbidden(flow, "unexpected error, rejecting request")
 
     def response(self, flow: http.HTTPFlow) -> None:
+        feed = self.get_feed(flow)
+        if feed is not None:
+            try:
+                flow = self.enrich_feed_flow(flow, feed)
+                if self.is_allowed_feed_endpoint(flow):
+                    return self.process_feed_response(flow)
+            except ForbiddenException as ex:
+                logger.error(ex)
+                return self.forbidden(flow, str(ex))
+            except Exception as ex:
+                logger.error(ex)
+                return self.forbidden(flow, "unexpected error, rejecting response")
+
+            logger.error(
+                "rejecting non allowed feed response from %s" % flow.request.path
+            )
+            return self.forbidden(flow)
+
         if not (self.url_is_allowed(flow) or self.domain_is_allowed(flow)):
             try:
                 flow = self.enrich_flow(flow)
@@ -275,6 +373,58 @@ class MispGuard:
             return True
         else:
             return False
+
+    def get_feed(self, flow: http.HTTPFlow) -> dict:
+        """
+        Returns the configured feed matching the request host, port and base
+        path, `None` if the request does not target a configured feed.
+        """
+        for feed in self.feeds:
+            if (
+                flow.request.host == feed["host"]
+                and flow.request.port == feed["port"]
+                and flow.request.path.startswith(feed["path"] + "/")
+            ):
+                return feed
+
+        return None
+
+    def enrich_feed_flow(self, flow: http.HTTPFlow, feed: dict) -> MISPHTTPFlow:
+        logger.debug("enriching feed http flow")
+        flow.__class__ = MISPHTTPFlow
+        flow.src_instance_id = self.get_src_instance_id(flow)
+        flow.feed_id = feed["id"]
+        flow.is_feed = True
+
+        # the feed endpoints are relative to the configured feed url
+        relative_path = flow.request.path[len(feed["path"]) :]
+
+        for endpoint in self.misp_feed_endpoints:
+            if (
+                re.match(endpoint["regex"], relative_path)
+                and flow.request.method in endpoint["methods"]
+            ):
+                setattr(flow, endpoint["flag"], True)
+                flow.feed_endpoint = endpoint
+                break
+
+        return flow
+
+    def is_allowed_feed_endpoint(self, flow: MISPHTTPFlow) -> bool:
+        if flow.feed_endpoint is None:
+            return False
+
+        setting = flow.feed_endpoint.get("setting")
+        if setting is not None and not self.config["feeds"][flow.feed_id].get(
+            setting, False
+        ):
+            logger.error(
+                "endpoint %s is not enabled for the `%s` feed, set `%s: true` to allow it"
+                % (flow.request.path, flow.feed_id, setting)
+            )
+            return False
+
+        return True
 
     def enrich_flow(self, flow: http.HTTPFlow) -> MISPHTTPFlow:
         logger.debug("enriching http flow")
@@ -422,6 +572,89 @@ class MispGuard:
             rules = self.get_rules(flow)
             return self.process_analyst_data(rules, [analyst_data], flow)
 
+    def process_feed_request(self, flow: MISPHTTPFlow) -> None:
+        logger.debug("processing feed request")
+        logger.info(
+            "received feed request - [%s]%s" % (flow.request.method, flow.request.path)
+        )
+
+        # feed fetches are plain GET requests, the rules are checked on the
+        # responses
+        return None
+
+    def process_feed_response(self, flow: MISPHTTPFlow) -> None:
+        logger.debug("processing feed response")
+
+        if flow.response.status_code != 200:
+            logger.debug(
+                "feed response with status code %d carries no event data, passthrough"
+                % flow.response.status_code
+            )
+            return None  # passthrough
+
+        if flow.is_feed_event_signature:
+            # the signature of a protected event holds no event data, and the
+            # event it signs is passed through untouched or rejected as a whole
+            logger.info(
+                "`%s` feed event signature response, passthrough" % flow.feed_id
+            )
+            return None  # passthrough
+
+        if flow.is_feed_cache:
+            # the feed cache only holds the hashes of the attribute values and
+            # the uuid of the event they belong to, there is nothing to check
+            logger.info("`%s` feed cache response, passthrough" % flow.feed_id)
+            return None  # passthrough
+
+        rules = self.get_feed_rules(flow)
+
+        if flow.is_feed_manifest:
+            try:
+                manifest = self.get_feed_manifest_from_message(flow.response)
+            except Exception as ex:
+                return self.forbidden(flow, str(ex))
+
+            return self.process_feed_manifest(rules, manifest, flow)
+
+        if flow.is_feed_event:
+            try:
+                event = self.get_event_from_message(flow.response)
+            except Exception as ex:
+                return self.forbidden(flow, str(ex))
+
+            return self.process_event(rules, event, flow)
+
+    def process_feed_manifest(
+        self, rules: dict, manifest: dict, flow: MISPHTTPFlow
+    ) -> None:
+        """
+        The feed manifest holds the metadata (tags, ...) of every event of the
+        feed, the events matching a block rule are removed from it so they are
+        never fetched.
+        """
+        logger.debug("processing feed manifest")
+
+        allowed_events = {}
+        for event_uuid, event_metadata in manifest.items():
+            try:
+                self.check_event_level_rules(rules, {"Event": event_metadata})
+                allowed_events[event_uuid] = event_metadata
+            except ForbiddenException as ex:
+                logger.info(
+                    "event %s removed from the `%s` feed manifest - %s"
+                    % (event_uuid, flow.feed_id, ex)
+                )
+
+        blocked_events = len(manifest) - len(allowed_events)
+        if blocked_events > 0:
+            logger.info(
+                "%d of %d events removed from the `%s` feed manifest"
+                % (blocked_events, len(manifest), flow.feed_id)
+            )
+            flow.response.text = json.dumps(allowed_events)
+
+        return None
+
     def process_response(self, flow: MISPHTTPFlow) -> None:
         logger.debug("processing response")
 
@@ -507,13 +740,19 @@ class MispGuard:
 
         return rules
 
+    def get_feed_rules(self, flow: MISPHTTPFlow) -> dict:
+        logger.debug("getting misp-guard feed rules")
+
+        return self.config["feeds"][flow.feed_id]
+
     def process_event(self, rules: dict, event: dict, flow: MISPHTTPFlow) -> None:
-        logger.debug("processing outgoing event: %s" % event["Event"]["info"])
+        logger.debug("processing event: %s" % event["Event"]["info"])
 
         try:
             self.check_event_level_rules(rules, event)
-            self.check_attribute_level_rules(rules, event["Event"]["Attribute"])
-            self.check_object_level_rules(rules, event["Event"]["Object"])
+            # feed events do not always carry every property
+            self.check_attribute_level_rules(rules, event["Event"].get("Attribute", []))
+            self.check_object_level_rules(rules, event["Event"].get("Object", []))
 
         except ForbiddenException as ex:
             return self.forbidden(flow, str(ex))
@@ -771,7 +1010,10 @@ class MispGuard:
     def check_blocked_event_distribution_levels(
         self, blocked_distribution_levels: list, event: dict
     ) -> None:
-        if str(event["Event"]["distribution"]) in blocked_distribution_levels:
+        if (
+            "distribution" in event["Event"]
+            and str(event["Event"]["distribution"]) in blocked_distribution_levels
+        ):
             raise ForbiddenException(
                 "event has blocked distribution level: %s"
                 % event["Event"]["distribution"]
@@ -1082,6 +1324,17 @@ class MispGuard:
             if "Event" not in event:
                 raise Exception("no `Event` property in request body")
             return event
+        except json.decoder.JSONDecodeError:
+            raise Exception("invalid JSON body")
+
+    def get_feed_manifest_from_message(self, message: http.Message) -> dict:
+        if message.content is None:
+            raise Exception("empty message body")
+        try:
+            manifest = message.json()
+            if not isinstance(manifest, dict):
+                raise Exception("invalid feed manifest body")
+            return manifest
         except json.decoder.JSONDecodeError:
             raise Exception("invalid JSON body")
 

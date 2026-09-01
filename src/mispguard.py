@@ -234,6 +234,11 @@ class MispGuard:
     def load(self, loader):
         loader.add_option("config", str, "", "MISP Guard configuration file")
 
+    def done(self):
+        # addon shutdown hook, stops the configuration file watcher
+        self.observer.stop()
+        self.observer.join()
+
     def server_connect(self, data: server_hooks.ServerConnectionHookData):
         dst_host, dst_port = data.server.address
 

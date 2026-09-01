@@ -32,8 +32,21 @@ def mispguard_server_hooks_data(host: str, port: int):
 
 
 class TestMispGuard:
+    @pytest.fixture(autouse=True)
+    def mispguard_addons(self):
+        """
+        Stops the configuration file watcher of the addons instantiated by the
+        tests, the watchers would otherwise pile up for the whole session and
+        exhaust the inotify instances available to the user.
+        """
+        self.addons = []
+        yield
+        for addon in self.addons:
+            addon.done()
+
     def load_mispguard(self) -> mispguard.MispGuard:
         mg = mispguard.MispGuard()
+        self.addons.append(mg)
 
         with taddons.context(mg) as tctx:
             tctx.configure(mg, config="./test/test_config.json")
@@ -1018,6 +1031,7 @@ class TestMispGuard:
 
     def test_no_config_file(self, caplog) -> mispguard.MispGuard:
         mg = mispguard.MispGuard()
+        self.addons.append(mg)
         caplog.set_level("INFO")
 
         with taddons.context(mg) as tctx:
@@ -1032,6 +1046,7 @@ class TestMispGuard:
 
     def test_invalid_config_file(self, caplog) -> mispguard.MispGuard:
         mg = mispguard.MispGuard()
+        self.addons.append(mg)
         caplog.set_level("INFO")
 
         with taddons.context(mg) as tctx:

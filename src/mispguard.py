@@ -751,8 +751,10 @@ class MispGuard:
         try:
             self.check_event_level_rules(rules, event)
             # feed events do not always carry every property
-            self.check_attribute_level_rules(rules, event["Event"].get("Attribute", []))
-            self.check_object_level_rules(rules, event["Event"].get("Object", []))
+            self.check_attribute_level_rules(
+                rules, event["Event"].get("Attribute", []), True
+            )
+            self.check_object_level_rules(rules, event["Event"].get("Object", []), True)
 
         except ForbiddenException as ex:
             return self.forbidden(flow, str(ex))
@@ -835,7 +837,9 @@ class MispGuard:
             for relationship in event["Event"]["Relationship"]:
                 self.check_analyst_relationship_rules(rules, relationship)
 
-    def check_attribute_level_rules(self, rules: dict, attributes: dict) -> None:
+    def check_attribute_level_rules(
+        self, rules: dict, attributes: dict, inherit_event_taxonomies: bool = False
+    ) -> None:
         logger.debug("checking attribute level rules")
         for attribute in attributes:
             self.check_blocked_attribute_categories(
@@ -849,12 +853,14 @@ class MispGuard:
             )
             self.check_blocked_attribute_tags(rules["taxonomies_rules"], attribute)
             self.check_attribute_required_taxonomies(
-                rules["taxonomies_rules"], attribute
+                rules["taxonomies_rules"], attribute, inherit_event_taxonomies
             )
             self.check_attribute_sharing_groups_rules(rules, attribute)
 
             if "ShadowAttribute" in attribute:
-                self.check_attribute_level_rules(rules, attribute["ShadowAttribute"])
+                self.check_attribute_level_rules(
+                    rules, attribute["ShadowAttribute"], inherit_event_taxonomies
+                )
 
             if "Note" in attribute:
                 for note in attribute["Note"]:
@@ -868,7 +874,9 @@ class MispGuard:
                 for relationship in attribute["Relationship"]:
                     self.check_analyst_relationship_rules(rules, relationship)
 
-    def check_object_level_rules(self, rules: dict, objects: dict) -> None:
+    def check_object_level_rules(
+        self, rules: dict, objects: dict, inherit_event_taxonomies: bool = False
+    ) -> None:
         for object in objects:
             self.check_blocked_object_distribution_levels(
                 rules["blocked_distribution_levels"], object
@@ -876,7 +884,9 @@ class MispGuard:
 
             self.check_object_sharing_groups_rules(rules, object)
             self.check_blocked_object_types(rules["blocked_object_types"], object)
-            self.check_attribute_level_rules(rules, object["Attribute"])
+            self.check_attribute_level_rules(
+                rules, object["Attribute"], inherit_event_taxonomies
+            )
 
             if "Note" in object:
                 for note in object["Note"]:
@@ -959,31 +969,53 @@ class MispGuard:
             self.check_required_taxonomy_exists(
                 required_taxonomy, event["Event"]["Tag"], allowed_tags
             )
+            self.check_required_taxonomy_tags_allowed(
+                required_taxonomy, event["Event"]["Tag"], allowed_tags
+            )
 
         return True
 
     def check_attribute_required_taxonomies(
-        self, taxonomies_rules: dict, attribute: dict
+        self,
+        taxonomies_rules: dict,
+        attribute: dict,
+        inherit_event_taxonomies: bool = False,
     ) -> None:
+        """
+        `inherit_event_taxonomies` is set when the attribute belongs to an event
+        whose required taxonomies were already checked, an attribute without a
+        tag of a required taxonomy then inherits the one of its event.
+        """
         logger.debug("checking required attribute taxonomies")
         if len(taxonomies_rules["required_taxonomies"]) == 0:
             return True
 
-        if not "Tag" in attribute:
+        if not "Tag" in attribute and not inherit_event_taxonomies:
             raise ForbiddenException("attribute is missing required taxonomies")
 
+        tags = attribute.get("Tag", [])
         for required_taxonomy in taxonomies_rules["required_taxonomies"]:
             logger.debug("checking required taxonomy: %s" % required_taxonomy)
             allowed_tags = taxonomies_rules["allowed_tags"].get(required_taxonomy, [])
 
-            self.check_required_taxonomy_exists(
-                required_taxonomy, attribute["Tag"], allowed_tags
+            # the event already holds an allowed tag of the required taxonomy,
+            # only the tags the attribute does hold have to be allowed
+            if not inherit_event_taxonomies:
+                self.check_required_taxonomy_exists(
+                    required_taxonomy, tags, allowed_tags, "attribute"
+                )
+            self.check_required_taxonomy_tags_allowed(
+                required_taxonomy, tags, allowed_tags, "attribute"
             )
 
         return True
 
     def check_required_taxonomy_exists(
-        self, required_taxonomy: str, tags: list, allowed_tags: list = []
+        self,
+        required_taxonomy: str,
+        tags: list,
+        allowed_tags: list = [],
+        entity: str = "event",
     ) -> bool:
         for tag in tags:
             if tag["name"].startswith(required_taxonomy + ":"):
@@ -995,8 +1027,30 @@ class MispGuard:
                     return True
 
         raise ForbiddenException(
-            "event is missing required taxonomy: %s" % required_taxonomy
+            "%s is missing required taxonomy: %s" % (entity, required_taxonomy)
         )
+
+    def check_required_taxonomy_tags_allowed(
+        self,
+        required_taxonomy: str,
+        tags: list,
+        allowed_tags: list = [],
+        entity: str = "event",
+    ) -> bool:
+        # every tag of a required taxonomy has to be allowed, not only one
+        if len(allowed_tags) == 0:
+            return True
+
+        for tag in tags:
+            if tag["name"].startswith(required_taxonomy + ":") and tag[
+                "name"
+            ].lower() not in [allowed_tag.lower() for allowed_tag in allowed_tags]:
+                raise ForbiddenException(
+                    "%s has a non-allowed tag of required taxonomy %s: %s"
+                    % (entity, required_taxonomy, tag["name"])
+                )
+
+        return True
 
     def check_blocked_event_tags(self, taxonomies_rules: dict, event: dict) -> None:
         if "Tag" in event["Event"]:

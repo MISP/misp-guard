@@ -193,6 +193,7 @@
             "compartment_id": "compartment_4",
             "affiliation": "",
             "allow_sync_auth_key_refresh": false,
+            "allow_sightings": true,
             "taxonomies_rules": {
                 "required_taxonomies": [
                     "tlp"

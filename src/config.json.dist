@@ -23,6 +23,7 @@
             "compartment_id": "compartment_1",
             "affiliation": "",
             "allow_sync_auth_key_refresh": false,
+            "allow_sightings": false,
             "taxonomies_rules": {
                 "required_taxonomies": [],
                 "allowed_tags": {},
@@ -41,6 +42,7 @@
             "compartment_id": "compartment_2",
             "affiliation": "",
             "allow_sync_auth_key_refresh": false,
+            "allow_sightings": false,
             "taxonomies_rules": {
                 "required_taxonomies": [],
                 "allowed_tags": {},

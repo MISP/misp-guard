@@ -223,6 +223,44 @@ class TestMispGuard:
         assert flow.response.status_code == 403
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "/sightings/bulkSaveSightings/5e168365-4391-44bd-851a-b48a14c30d77",
+            "/sightings/restSearch/event",
+        ],
+    )
+    async def test_sightings_are_blocked_if_not_enabled(self, path: str, caplog):
+        """
+        Test that the sightings are blocked if the destination instance does
+        not have `allow_sightings` enabled.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        sightings_req = tutils.treq(
+            port=443,
+            host="instance2-comp1.com",
+            path=path,
+            method=b"POST",
+            content=b"[]",
+        )
+
+        flow = tflow.tflow(req=sightings_req)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+        mispguard.request(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "endpoint %s is not enabled for instance instance_1_2, "
+            "set `allow_sightings: true` to allow it" % path in caplog.text
+        )
+        assert (
+            "request blocked: [POST]%s - endpoint not allowed" % path in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
     async def test_allowed_domain_from_unknown_src_is_blocked(self, caplog):
         caplog.set_level("INFO")
         mispguard = self.load_mispguard()

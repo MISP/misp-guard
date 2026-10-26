@@ -122,11 +122,6 @@ class MispGuard:
             {"regex": r"^\/galaxies/pushCluster$", "methods": ["POST"]},
             {"regex": r"^\/galaxy_clusters\/restSearch$", "methods": ["POST"]},
             {"regex": r"^\/galaxy_clusters\/view\/[\w\-]{36}$", "methods": ["GET"]},
-            {"regex": r"^\/sightings\/restSearch\/event$", "methods": ["POST"]},
-            {
-                "regex": r"^\/sightings\/bulkSaveSightings\/[\w\-]{36}$",
-                "methods": ["POST"],
-            },
             {"regex": r"^\/analyst_data\/indexMinimal$", "methods": ["POST"]},
             {
                 "regex": r"^\/analyst_data\/index\/Note\/uuid\[\]\:[\w\-]{36}.json$",
@@ -184,6 +179,18 @@ class MispGuard:
                 "regex": r"^\/users\/resetauthkey\/me$",
                 "methods": ["POST"],
                 "setting": "allow_sync_auth_key_refresh",
+            },
+            # sightings hold no data the filtering rules apply to, but they
+            # disclose the sighting organisations
+            {
+                "regex": r"^\/sightings\/restSearch\/event$",
+                "methods": ["POST"],
+                "setting": "allow_sightings",
+            },
+            {
+                "regex": r"^\/sightings\/bulkSaveSightings\/[\w\-]{36}$",
+                "methods": ["POST"],
+                "setting": "allow_sightings",
             },
         ]
 
@@ -507,6 +514,10 @@ class MispGuard:
 
         if "/sightings/restSearch/event" in flow.request.path:
             flow.is_pull = True
+            flow.is_sighting = True
+
+        if "/sightings/bulkSaveSightings" in flow.request.path:
+            flow.is_push = True
             flow.is_sighting = True
 
         if "/analyst_data/indexMinimal" in flow.request.path:
@@ -837,7 +848,8 @@ class MispGuard:
         logger.debug("processing sighting")
 
         try:
-            # no rules for sightings yet
+            # no rules for sightings, they are only allowed towards the
+            # instances with the `allow_sightings` setting enabled
             return None
         except ForbiddenException as ex:
             return self.forbidden(flow, str(ex))

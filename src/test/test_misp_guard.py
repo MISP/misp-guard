@@ -590,6 +590,178 @@ class TestMispGuard:
         assert json.loads(flow.response.text) == {}
 
     @pytest.mark.asyncio
+    async def test_feed_manifest_required_taxonomy_non_allowed_tag(self, caplog):
+        """
+        Test that an event holding a non-allowed tag of a required taxonomy is
+        blocked, even if it also holds an allowed tag of that taxonomy.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        feed_req = tutils.treq(
+            port=443, host="feed2.com", path="/feeds/misp/manifest.json", method=b"GET"
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=json.dumps(
+                {
+                    "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a005": {
+                        "info": "OSINT - event with an allowed and a non-allowed tlp tag",
+                        "Tag": [{"name": "tlp:clear"}, {"name": "tlp:red"}],
+                    }
+                }
+            ).encode(),
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "event 1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a005 removed from the `feed_2` "
+            "feed manifest" in caplog.text
+        )
+        assert flow.response.status_code == 200
+        assert json.loads(flow.response.text) == {}
+
+    @pytest.mark.asyncio
+    async def test_feed_event_required_taxonomy_untagged_attribute(self, caplog):
+        """
+        Test that an event holding an allowed tag of a required taxonomy is
+        passed through when its attributes are not tagged.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        feed_req = tutils.treq(
+            port=443,
+            host="feed2.com",
+            path="/feeds/misp/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a006.json",
+            method=b"GET",
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=json.dumps(
+                {
+                    "Event": {
+                        "info": "OSINT - event with an allowed tlp tag",
+                        "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a006",
+                        "Tag": [{"name": "tlp:clear"}],
+                        "Attribute": [
+                            {
+                                "category": "Network activity",
+                                "type": "domain",
+                                "value": "evil3.example.com",
+                                "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0b006",
+                            }
+                        ],
+                    }
+                }
+            ).encode(),
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "request blocked" not in caplog.text
+        assert flow.response.status_code == 200
+
+    def feed_event_with_tagged_attribute_flow(
+        self, host: str, path: str, attribute_tag: str
+    ):
+        """
+        Builds a feed event fetch flow, the event is tagged tlp:clear and holds
+        a single attribute tagged with `attribute_tag`.
+        """
+        feed_req = tutils.treq(port=443, host=host, path=path, method=b"GET")
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=json.dumps(
+                {
+                    "Event": {
+                        "info": "OSINT - event with a tagged attribute",
+                        "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a007",
+                        "Tag": [{"name": "tlp:clear"}],
+                        "Attribute": [
+                            {
+                                "category": "Network activity",
+                                "type": "domain",
+                                "value": "evil4.example.com",
+                                "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0b007",
+                                "Tag": [{"name": attribute_tag}],
+                            }
+                        ],
+                    }
+                }
+            ).encode(),
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        return flow
+
+    @pytest.mark.asyncio
+    async def test_feed_event_attribute_blocked_tag(self, caplog):
+        """
+        Test that a feed event is blocked if one of its attributes holds a
+        blocked tag, even if the event itself is not.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_event_with_tagged_attribute_flow(
+            "feed1.com",
+            "/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a007.json",
+            "tlp:red",
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/"
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a007.json - attribute with a blocked "
+            "tag: tlp:red" in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_feed_event_attribute_required_taxonomy_non_allowed_tag(
+        self, caplog
+    ):
+        """
+        Test that a feed event is blocked if one of its attributes holds a
+        non-allowed tag of a required taxonomy, even if the event itself holds
+        an allowed one.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_event_with_tagged_attribute_flow(
+            "feed2.com",
+            "/feeds/misp/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a007.json",
+            "tlp:amber",
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/feeds/misp/"
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a007.json - attribute has a non-allowed "
+            "tag of required taxonomy tlp: tlp:amber" in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
     async def test_feed_event_non_blocked(self, caplog):
         """
         Test that a feed event not matching any block rule is passed through.

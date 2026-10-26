@@ -673,6 +673,97 @@ class TestMispGuard:
         assert "request blocked" not in caplog.text
         assert flow.response.status_code == 200
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "tags, allowed",
+        [
+            (["TLP:CLEAR"], True),
+            (["tlp:clear", "TLP:AMBER"], False),
+        ],
+    )
+    async def test_feed_manifest_required_taxonomy_letter_case(
+        self, tags: list, allowed: bool, caplog
+    ):
+        """
+        Test that the tags of a required taxonomy are recognized regardless of
+        their letter case.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        manifest = {
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a009": {
+                "info": "OSINT - event with upper case tlp tags",
+                "Tag": [{"name": tag} for tag in tags],
+            }
+        }
+        feed_req = tutils.treq(
+            port=443, host="feed2.com", path="/feeds/misp/manifest.json", method=b"GET"
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=json.dumps(manifest).encode(),
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert flow.response.status_code == 200
+        assert json.loads(flow.response.text) == (manifest if allowed else {})
+
+    @pytest.mark.asyncio
+    async def test_feed_event_blocked_attribute_category_letter_case(self, caplog):
+        """
+        Test that the blocked attribute categories are matched regardless of
+        their letter case.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        feed_req = tutils.treq(
+            port=443,
+            host="feed1.com",
+            path="/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a010.json",
+            method=b"GET",
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=json.dumps(
+                {
+                    "Event": {
+                        "info": "OSINT - event with a lower case category",
+                        "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a010",
+                        "Attribute": [
+                            {
+                                "category": "person",
+                                "type": "first-name",
+                                "value": "John",
+                                "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0b010",
+                            }
+                        ],
+                    }
+                }
+            ).encode(),
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/"
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a010.json - attribute with a blocked "
+            "category: person" in caplog.text
+        )
+        assert flow.response.status_code == 403
+
     def feed_event_with_tagged_attribute_flow(
         self, host: str, path: str, attribute_tag: str
     ):

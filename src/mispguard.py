@@ -1027,7 +1027,7 @@ class MispGuard:
         entity: str = "event",
     ) -> bool:
         for tag in tags:
-            if tag["name"].startswith(required_taxonomy + ":"):
+            if tag["name"].lower().startswith(required_taxonomy.lower() + ":"):
                 # if there are allowed tags, check if the tag is allowed
                 # otherwise any tag of this taxonomy is ok
                 if len(allowed_tags) == 0 or tag["name"].lower() in [
@@ -1051,9 +1051,11 @@ class MispGuard:
             return True
 
         for tag in tags:
-            if tag["name"].startswith(required_taxonomy + ":") and tag[
-                "name"
-            ].lower() not in [allowed_tag.lower() for allowed_tag in allowed_tags]:
+            if tag["name"].lower().startswith(
+                required_taxonomy.lower() + ":"
+            ) and tag["name"].lower() not in [
+                allowed_tag.lower() for allowed_tag in allowed_tags
+            ]:
                 raise ForbiddenException(
                     "%s has a non-allowed tag of required taxonomy %s: %s"
                     % (entity, required_taxonomy, tag["name"])
@@ -1168,7 +1170,10 @@ class MispGuard:
     def check_blocked_attribute_categories(
         self, blocked_attribute_categories: list, attribute: dict
     ) -> None:
-        if attribute["category"] in blocked_attribute_categories:
+        if attribute["category"].lower() in [
+            blocked_attribute_category.lower()
+            for blocked_attribute_category in blocked_attribute_categories
+        ]:
             raise ForbiddenException(
                 "attribute with a blocked category: %s" % attribute["category"]
             )
@@ -1274,7 +1279,10 @@ class MispGuard:
     def check_blocked_analyst_data_sharing_groups_uuids(
         self, blocked_sharing_groups_uuids: list, analyst_data: dict
     ) -> None:
-        if analyst_data["SharingGroup"]["uuid"] in blocked_sharing_groups_uuids:
+        if analyst_data["SharingGroup"]["uuid"].lower() in [
+            blocked_sharing_groups_uuid.lower()
+            for blocked_sharing_groups_uuid in blocked_sharing_groups_uuids
+        ]:
             raise ForbiddenException(
                 "analyst data has blocked sharing group uuid: %s"
                 % analyst_data["SharingGroup"]["uuid"]

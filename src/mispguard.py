@@ -585,6 +585,15 @@ class MispGuard:
     def process_feed_response(self, flow: MISPHTTPFlow) -> None:
         logger.debug("processing feed response")
 
+        if 200 < flow.response.status_code < 300:
+            # a successful response other than 200 (e.g. 203, 206) may still be
+            # ingested by MISP, its content cannot be evaluated reliably
+            return self.forbidden(
+                flow,
+                "unexpected feed response status code %d"
+                % flow.response.status_code,
+            )
+
         if flow.response.status_code != 200:
             logger.debug(
                 "feed response with status code %d carries no event data, passthrough"

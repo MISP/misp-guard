@@ -1019,6 +1019,34 @@ class TestMispGuard:
         assert flow.response.status_code == 304
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("status_code", [201, 203, 206])
+    async def test_feed_non_200_success_response_is_blocked(
+        self, status_code: int, caplog
+    ):
+        """
+        Test that a successful feed response other than 200 is blocked, even if
+        its content would not match any block rule, as MISP may ingest it.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow(
+            "/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a003.json",
+            "./test/fixtures/test_feed_event_blocked_attribute_type.json",
+            status_code=status_code,
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/"
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a003.json - unexpected feed response "
+            "status code %d" % status_code in caplog.text
+        )
+        assert flow.response.status_code == 403
+
+    @pytest.mark.asyncio
     async def test_feed_invalid_manifest_is_blocked(self, caplog):
         """
         Test that a feed manifest that is not a JSON document is blocked.

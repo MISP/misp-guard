@@ -53,7 +53,14 @@ class ConfigWatcher(FileSystemEventHandler):
         self.addon = addon
 
     def on_modified(self, event):
-        if ctx.options.config in event.src_path:
+        self.reload_if_changed(event.src_path)
+
+    def on_moved(self, event):
+        # editors often save a file by renaming a temporary copy over it
+        self.reload_if_changed(event.dest_path)
+
+    def reload_if_changed(self, path: str):
+        if abspath(path) == abspath(ctx.options.config):
             # check if the config file was modified
             if self.addon.config_checksum != hash(open(ctx.options.config).read()):
                 logger.info(f"{ctx.options.config} modified, reloading addon...")
@@ -88,11 +95,12 @@ class MISPHTTPFlow(http.HTTPFlow):
 
 class MispGuard:
     def __init__(self):
-        # watchdog observer setup for config file changes
+        # watchdog observer setup for config file changes, the directory of the
+        # config file is scheduled once it is known, see `configure`
         self.config_watcher = ConfigWatcher(self)
         self.observer = Observer()
-        self.observer.schedule(self.config_watcher, ".", recursive=False)
         self.observer.start()
+        self.watched_dir = None
 
         self.config: dict = {}
         self.config_checksum = None
@@ -184,28 +192,29 @@ class MispGuard:
             try:
                 with open("config.schema.json", "r") as file:
                     schema = json.load(file)
-                self.config = json.load(open(ctx.options.config))
-                self.config_checksum = hash(open(ctx.options.config).read())
+                with open(ctx.options.config, "r") as file:
+                    config_content = file.read()
+                # the new configuration is only applied once it is fully
+                # validated and parsed
+                config = json.loads(config_content)
 
                 validate(
-                    instance=self.config,
+                    instance=config,
                     schema=schema,
                     format_checker=Draft202012Validator.FORMAT_CHECKER,
                 )
 
                 # create instances_host_mapping dictionary
-                self.config["instances_host_mapping"] = {}
-                for instance_id, instance in self.config["instances"].items():
-                    self.config["instances_host_mapping"][
-                        instance["host"]
-                    ] = instance_id
-                    self.config["instances_host_mapping"][instance["ip"]] = instance_id
+                config["instances_host_mapping"] = {}
+                for instance_id, instance in config["instances"].items():
+                    config["instances_host_mapping"][instance["host"]] = instance_id
+                    config["instances_host_mapping"][instance["ip"]] = instance_id
 
                 # parse the configured feeds urls into host, port and base path
-                self.feeds = []
-                for feed_id, feed in self.config.get("feeds", {}).items():
+                feeds = []
+                for feed_id, feed in config.get("feeds", {}).items():
                     parsed_url = urlparse(feed["url"])
-                    self.feeds.append(
+                    feeds.append(
                         {
                             "id": feed_id,
                             "type": feed["type"],
@@ -217,25 +226,52 @@ class MispGuard:
                     )
 
                 # match the most specific feed base path first
-                self.feeds.sort(key=lambda feed: len(feed["path"]), reverse=True)
+                feeds.sort(key=lambda feed: len(feed["path"]), reverse=True)
 
             except Exception as e:
+                if self.config:
+                    # a running guard keeps enforcing the last valid
+                    # configuration instead of stopping
+                    logger.error(
+                        "failed to reload config file, keeping the previous configuration: %s"
+                        % str(e)
+                    )
+                    return
                 logger.error("failed to load config file: %s" % str(e))
                 exit(1)
+
+            self.config = config
+            self.feeds = feeds
+            self.config_checksum = hash(config_content)
+            self.watch_config_dir()
 
             logger.info("configuration loaded")
             logger.info(json.dumps(self.config, indent=4))
 
         else:
+            if self.config:
+                logger.error(
+                    "config file %s not found, keeping the previous configuration"
+                    % ctx.options.config
+                )
+                return
             logger.error("failed to load config file, use: `--set config=config.json`")
             exit(1)
         logger.info("MispGuard initialized")
+
+    def watch_config_dir(self):
+        config_dir = dirname(abspath(ctx.options.config))
+        if config_dir != self.watched_dir:
+            self.observer.unschedule_all()
+            self.observer.schedule(self.config_watcher, config_dir, recursive=False)
+            self.watched_dir = config_dir
 
     def load(self, loader):
         loader.add_option("config", str, "", "MISP Guard configuration file")
 
     def done(self):
         # addon shutdown hook, stops the configuration file watcher
+        logger.info("MispGuard shutting down")
         self.observer.stop()
         self.observer.join()
 
@@ -269,7 +305,8 @@ class MispGuard:
             try:
                 flow = self.enrich_feed_flow(flow, feed)
                 if self.is_allowed_feed_endpoint(flow):
-                    return self.process_feed_request(flow)
+                    self.process_feed_request(flow)
+                    return self.allowed(flow, "request")
             except ForbiddenException as ex:
                 logger.error(ex)
                 return self.forbidden(flow, str(ex))
@@ -291,7 +328,8 @@ class MispGuard:
                         or self.is_allowed_conditional_endpoint(flow)
                     )
                 ):
-                    return self.process_request(flow)
+                    self.process_request(flow)
+                    return self.allowed(flow, "request")
             except ForbiddenException as ex:
                 logger.error(ex)
                 return self.forbidden(flow, str(ex))
@@ -321,7 +359,8 @@ class MispGuard:
             try:
                 flow = self.enrich_feed_flow(flow, feed)
                 if self.is_allowed_feed_endpoint(flow):
-                    return self.process_feed_response(flow)
+                    self.process_feed_response(flow)
+                    return self.allowed(flow, "response")
             except ForbiddenException as ex:
                 logger.error(ex)
                 return self.forbidden(flow, str(ex))
@@ -340,7 +379,8 @@ class MispGuard:
                 if self.can_reach_compartment(flow) and self.can_reach_dst_host_port(
                     flow
                 ):
-                    return self.process_response(flow)
+                    self.process_response(flow)
+                    return self.allowed(flow, "response")
             except ForbiddenException as ex:
                 logger.error(ex)
                 return self.forbidden(flow, str(ex))
@@ -1292,12 +1332,34 @@ class MispGuard:
         self, flow: MISPHTTPFlow, message: str = "endpoint not allowed"
     ) -> None:
         logger.error(
-            "request blocked: [%s]%s - %s"
-            % (flow.request.method, flow.request.path, message)
+            "request blocked: [%s]%s - %s - source: %s"
+            % (flow.request.method, flow.request.path, message, self.get_source(flow))
         )
+        flow.metadata["mispguard_blocked"] = True
         flow.response = http.Response.make(
             403, b"Forbidden", {"Content-Type": "text/plain"}
         )
+
+    def allowed(self, flow: MISPHTTPFlow, stage: str) -> None:
+        """
+        Logs the flow that passed every check of the `request` or `response`
+        stage, so allowed and blocked flows are both recorded.
+        """
+        if flow.metadata.get("mispguard_blocked"):
+            return None
+
+        logger.info(
+            "%s allowed: [%s]%s - source: %s"
+            % (stage, flow.request.method, flow.request.path, self.get_source(flow))
+        )
+
+    def get_source(self, flow: http.HTTPFlow) -> str:
+        src_ip = flow.client_conn.peername[0]
+        src_instance_id = getattr(flow, "src_instance_id", None)
+        if src_instance_id is not None:
+            return "%s (%s)" % (src_ip, src_instance_id)
+
+        return src_ip
 
     def get_src_instance_id(self, flow: http.HTTPFlow) -> str:
         if flow.client_conn.peername[0] not in self.config["instances_host_mapping"]:

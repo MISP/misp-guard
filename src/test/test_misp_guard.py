@@ -1451,3 +1451,97 @@ class TestMispGuard:
                 self.tctx = tctx
             except SystemExit:
                 assert "failed to load config file: " in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_allowed_flow_is_logged_with_source(self, caplog):
+        """
+        Test that the flows passing every check are logged with their source.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow(
+            "/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001.json",
+            "./test/fixtures/test_feed_event_non-blocked.json",
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        path = "/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a001.json"
+        assert (
+            "request allowed: [GET]%s - source: 10.0.0.1 (instance_1_1)" % path
+            in caplog.text
+        )
+        assert (
+            "response allowed: [GET]%s - source: 10.0.0.1 (instance_1_1)" % path
+            in caplog.text
+        )
+        assert flow.response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_blocked_flow_is_logged_with_source(self, caplog):
+        """
+        Test that the blocked flows are logged with their source, and not
+        logged as allowed.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_flow(
+            "/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a003.json",
+            "./test/fixtures/test_feed_event_blocked_attribute_type.json",
+        )
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/"
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a003.json - attribute with a blocked "
+            "type: email - source: 10.0.0.1 (instance_1_1)" in caplog.text
+        )
+        assert "response allowed" not in caplog.text
+        assert flow.response.status_code == 403
+
+    def test_shutdown_is_logged(self, caplog):
+        caplog.set_level("INFO")
+        mg = mispguard.MispGuard()
+
+        mg.done()
+
+        assert "MispGuard shutting down" in caplog.text
+
+    def test_config_reload(self, caplog, tmp_path):
+        """
+        Test that a modified config file is reloaded, that an invalid one is
+        rejected while the previous configuration keeps being enforced, and
+        that the directory of the config file is the one watched.
+        """
+        caplog.set_level("INFO")
+        mg = mispguard.MispGuard()
+        self.addons.append(mg)
+
+        config_file = tmp_path / "config.json"
+        with open("./test/test_config.json", "r") as f:
+            config = json.load(f)
+        config_file.write_text(json.dumps(config))
+
+        with taddons.context(mg) as tctx:
+            tctx.configure(mg, config=str(config_file))
+            assert mg.watched_dir == str(tmp_path)
+            assert mg.config["feeds"]["feed_1"]["allow_caching"] is False
+
+            # valid modification, applied
+            config["feeds"]["feed_1"]["allow_caching"] = True
+            config_file.write_text(json.dumps(config))
+            mg.config_watcher.reload_if_changed(str(config_file))
+            assert mg.config["feeds"]["feed_1"]["allow_caching"] is True
+
+            # invalid modification, rejected without stopping the guard
+            config_file.write_text(json.dumps({"instances": {}}))
+            mg.config_watcher.reload_if_changed(str(config_file))
+            assert (
+                "failed to reload config file, keeping the previous configuration"
+                in caplog.text
+            )
+            assert mg.config["feeds"]["feed_1"]["allow_caching"] is True
+            assert "instance_1_1" in mg.config["instances_host_mapping"].values()

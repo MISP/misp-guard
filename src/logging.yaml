@@ -15,8 +15,10 @@ handlers:
     class: logging.handlers.TimedRotatingFileHandler
     level: INFO
     formatter: simple
+    # rotated daily, one year of rotated logs is kept, raise `backupCount` to
+    # keep them longer (e.g. 1825 for five years)
     when: D
-    backupCount: 5
+    backupCount: 365
     filename: ./logs/misp-guard.log
 loggers:
   root:

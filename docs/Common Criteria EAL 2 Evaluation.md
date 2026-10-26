@@ -223,7 +223,7 @@ MISP Guard enforces an access control policy where:
 3. Access to logs is restricted to only the adminsitrators of MISP Guard.  
 4. Only trusted MISP instances that satisfy predefined network and security conditions can interact with the system.  
 5. Only explicitly declared remote feeds can be fetched, and only the endpoints of those feeds that convey filterable data, or whose fetching has been explicitly permitted, are mediated.  
-6. Operations that are not part of the synchronization itself, such as the refreshal of the synchronization user authentication key, are only permitted where the corresponding setting has been explicitly enabled.  
+6. Operations that are not part of the synchronization itself, such as the refreshal of the synchronization user authentication key, or whose content cannot be evaluated against the filtering rules, such as the synchronization of sightings, are only permitted where the corresponding setting has been explicitly enabled.  
 
 By defining and enforcing these rules, the **FDP_ACC** requirement ensures secure and controlled access to the TOE’s information objects, aligned with its operational and security objectives.
 
@@ -245,7 +245,7 @@ The core objective of this policy is to prevent unauthorized or unintentional sh
 1. **Allowed and Restricted Data**:  
    - Only data satisfying predefined filters (e.g., compartments, taxonomies, or sharing groups) is allowed to flow between MISP instances.  
    - Data with restricted attributes (e.g., blocked object types or attribute types) is denied.  
-   - Only the data flows utilized by the MISP synchronization, by the fetching of the declared remote feeds and, where explicitly enabled, by the refreshal of the synchronization user authentication key are allowed to transit via MISP Guard, everything else is blocked.
+   - Only the data flows utilized by the MISP synchronization, by the fetching of the declared remote feeds and, where explicitly enabled, by the synchronization of sightings and by the refreshal of the synchronization user authentication key are allowed to transit via MISP Guard, everything else is blocked.
 
 2. **Compartmentalization**:  
    - Events are only synchronized to MISP instances within the permitted compartments.  
@@ -271,6 +271,7 @@ The core objective of this policy is to prevent unauthorized or unintentional sh
 
 7. **Synchronization Credential Constraints**:  
    - The refreshal of the synchronization user authentication key is only allowed towards the destination instances where it has been explicitly enabled, and only for the key of the authenticated user itself.  
+   - The synchronization of sightings, which convey no filterable data, is only allowed towards the destination instances where it has been explicitly enabled.  
 
 
 ##### Information Flow Attributes
@@ -459,7 +460,7 @@ MISP Guard relies on configurable security attributes to control the synchroniza
 4. **Distribution Levels**: Levels controlling how broadly an event can be shared (e.g., "this community only").  
 5. **Blocked Categories and Types**: Attribute and object types excluded from synchronization (e.g., IP addresses, malware samples, personal information such as passport numbers).  
 6. **Feeds**: The declaration of the remote feeds that can be fetched, identified by their format and url, together with the set of filtering rules and the cache permission associated to each of them.  
-7. **Endpoint Permissions**: Per instance and per feed settings enabling the endpoints that are not part of the minimal set required for synchronization, such as the refreshal of the synchronization user authentication key or the fetching of a feed cache.  
+7. **Endpoint Permissions**: Per instance and per feed settings enabling the endpoints that are not part of the minimal set required for synchronization, such as the refreshal of the synchronization user authentication key, the synchronization of sightings or the fetching of a feed cache.  
 
 
 ##### Attribute Management Operations
@@ -592,6 +593,12 @@ MISP Guard only mediates the endpoints required by the functions it supports, ev
 
 #### 5.4.2. Feed Cache
 - The fetching of the feed cache is subject to the `allow_caching` setting of the feed, as described in Sections 5.3.2 and 5.3.4.
+
+#### 5.4.3. Sightings
+- **Description**: Sightings record the observation of an attribute by an organisation. They convey no distribution level, sharing group, tags, type or category, so the filtering rules described in Section 5.1 cannot be evaluated on them, but they disclose the organisations that made the observations and the attributes they refer to.
+- **Functionality**: When the `allow_sightings` setting of an instance is enabled, the `[POST]/sightings/bulkSaveSightings/[UUID]` (PUSH) and `[POST]/sightings/restSearch/event` (PULL) requests towards that instance are mediated. Their content is forwarded unaltered.
+- **Scope**: The setting is evaluated on the destination instance of the request: the instance receiving the sightings for PUSH, and the instance the sightings are requested from for PULL.
+- **Default**: Disabled. When the setting is absent or disabled the request is rejected as any other non mediated request.
 
 ### 5.5. Operational Workflow of Filtering
 
@@ -949,7 +956,7 @@ sequenceDiagram
     rect rgb(191, 223, 255)
     note right of MISP Internal: PUSH Sightings
     MISP External->>+MISP Guard: [POST]/sightings/bulkSaveSightings/[UUID]
-    note right of MISP Guard: Outgoing Sightings are inspected and rejected with 403 if any block rule matches
+    note right of MISP Guard: Rejected with 403 unless `allow_sightings` is enabled for the destination instance, sightings convey no data the filtering rules apply to
     MISP Guard->>-MISP Internal: [POST]/sightings/bulkSaveSightings/[UUID]
     MISP Internal->>MISP Guard: [POST]/sightings/bulkSaveSightings/[UUID]
     MISP Guard->>MISP External: [POST]/sightings/bulkSaveSightings/[UUID]
@@ -1022,11 +1029,11 @@ sequenceDiagram
 
     rect rgb(191, 223, 255)
     note right of MISP Internal: PULL Sightings 
-    MISP Internal->>MISP Guard: [POST]/sightings/restSearch/event
-    MISP Guard->>MISP External: [POST]/sightings/restSearch/event
-    MISP External->>+MISP Guard: [POST]/sightings/restSearch/event
-    note right of MISP Guard: Incoming Sightings are inspected and rejected with 403 if any block rule matches
-    MISP Guard->>-MISP Internal: [POST]/sightings/restSearch/event
+    MISP Internal->>+MISP Guard: [POST]/sightings/restSearch/event
+    note right of MISP Guard: Rejected with 403 unless `allow_sightings` is enabled for the destination instance, sightings convey no data the filtering rules apply to
+    MISP Guard->>-MISP External: [POST]/sightings/restSearch/event
+    MISP External->>MISP Guard: [POST]/sightings/restSearch/event
+    MISP Guard->>MISP Internal: [POST]/sightings/restSearch/event
     end
     
     rect rgb(191, 223, 255)
@@ -1125,8 +1132,8 @@ The diagrams above show the main exchanges. The complete set of endpoints mediat
 | `[POST]/galaxies/pushCluster` | PUSH | The galaxy cluster is inspected. |
 | `[POST]/galaxy_clusters/restSearch` | PULL | Only `minimal` and `published` searches are allowed. |
 | `[GET]/galaxy_clusters/view/[UUID]` | PULL | The galaxy cluster is inspected. |
-| `[POST]/sightings/bulkSaveSightings/[UUID]` | PUSH | |
-| `[POST]/sightings/restSearch/event` | PULL | |
+| `[POST]/sightings/bulkSaveSightings/[UUID]` | PUSH | Only if `allow_sightings` is enabled for the destination instance, see Section 5.4.3. |
+| `[POST]/sightings/restSearch/event` | PULL | Only if `allow_sightings` is enabled for the destination instance, see Section 5.4.3. |
 | `[POST]/analyst_data/filterAnalystDataForPush` | PUSH | |
 | `[POST]/analyst_data/pushAnalystData` | PUSH | The analyst data is inspected. |
 | `[POST]/analyst_data/indexMinimal` | PULL | |

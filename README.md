@@ -40,6 +40,7 @@ To prevent data leakage in high-security environments such as military networks 
 **Instance settings**
 
 * `allow_sync_auth_key_refresh`: If set to `true`, `[POST]/users/resetauthkey/me` requests to this instance are allowed, so the sync user authentication key can be refreshed. Defaults to `false`, meaning these requests are blocked as any other non sync related endpoint. Note that this setting is evaluated on the **destination** instance, the one owning the authentication key being refreshed.
+* `allow_sightings`: If set to `true`, the sightings synchronization towards this instance is allowed, `[POST]/sightings/bulkSaveSightings/[UUID]` (push) and `[POST]/sightings/restSearch/event` (pull) requests. Sightings convey no data the filtering rules apply to, but they disclose the organisations that made them. Defaults to `false`, meaning these requests are blocked. Note that this setting is evaluated on the **destination** instance of the request.
 
 See sample config [here](src/test/test_config.json).
 

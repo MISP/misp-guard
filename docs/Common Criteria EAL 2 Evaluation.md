@@ -116,6 +116,18 @@ The primary features of MISP Guard include the following:
 
 These features collectively ensure that MISP Guard achieves its purpose as a robust, secure, and efficient intermediary for managing MISP data exchanges while preventing information leakage.  
 
+Not all of the features above are implemented by the TOE itself. Some of them are fulfilled by the configuration or by the environment of the deployment, and some are not provided:
+
+| Feature | Coverage |
+|-|-|
+| Support for MISP Exchange, Releasability Compliance, Filters Management, Flexibility in Synchronization, Feed Ingestion, Synchronization Credential Renewal | Implemented by the TOE, see Section 5. |
+| Minimal Data Storage, In-Memory Processing | Implemented by the TOE. No event content is written to disk, the audit logs record the requests, their source and the outcome of the rules. |
+| Attribute Enforcement | Partially implemented. Classification and releasability are enforced through the taxonomies rules and the distribution levels (Sections 5.1.2 and 5.1.3), authority can only be enforced when it is expressed as a tag of a required taxonomy. The enforcement applies to the data mediated by the TOE, not to the events stored in the MISP instances. |
+| Long-Term Logging | Fulfilled by configuration. The default retention is one year, the five year retention requires adjusting the logging configuration as described in Section 4.2.1. |
+| Alerts | Not provided by the TOE. Alerts have to be raised by external log monitoring tools, see Section 4.2.1. |
+| Fault Recovery | Not provided by the TOE. MISP Guard keeps no synchronization state, an interrupted synchronization is resumed by the MISP instances on their next synchronization. As events are forwarded or rejected as a whole, a failure does not result in partially transferred events. |
+| Deployment as a Virtual Appliance | Not provided by the TOE. The project documentation includes a containerized deployment example, the packaging of the TOE as an appliance is a responsibility of the deployment. |
+
    - Details of external interactions:
      - MISP input and output data streams processed by the proxy.
      - User interfaces or configuration files for filter management.
@@ -381,6 +393,7 @@ Each audit record generated includes the following details:
    - Filters applied and their outcomes.  
    - Attributes or objects affected.  
    - Action results (e.g., success, failure, or partial completion).  
+4. **Source**: For the allowed and blocked requests, the IP address of the requesting MISP instance and, when it is a declared one, its identifier in the configuration.  
 
 ##### Logging Mechanisms
 1. **Secure Storage**:  
@@ -536,6 +549,8 @@ MISP Guard’s implementation of FMT_MSA ensures that all security attributes ar
   - Allows synchronization of exact URLs specified in the allowlist JSON array. If a URL matches an entry, it is exempted from filtering and allowed for synchronization.  
 - **Domains**:  
   - Allows synchronization based on domain matching. Any request for a domain listed in the allowlist is permitted, including any paths within the domain. This function should only be used when adding exact URLs is impractical.
+- **Source Restriction**:  
+  - The allowlist only exempts a request from the filtering rules, not from the source verification. A request to an allowlisted URL or domain is only forwarded if it originates from a MISP instance declared in the configuration, requests from any other source are rejected.
 
 
 ### 5.3. Feed Filtering Functions
@@ -584,10 +599,10 @@ MISP Guard only mediates the endpoints required by the functions it supports, ev
    - All communication between MISP instances is routed through MISP Guard, where events, attributes, and objects are subjected to filtering rules.  
 
 2. **Rule Matching and Blocking**:  
-   - If an event, attribute, or object matches any of the configured block rules, synchronization is stopped. MISP Guard generates an audit log of the blocked action.  
+   - If an event, attribute, or object matches any of the configured block rules, synchronization is stopped. MISP Guard generates an audit log of the blocked action, including the source of the request. The requests and responses that pass every rule are logged as allowed.  
 
 3. **Allowlist Verification**:  
-   - If an event matches an allowlist rule, it bypasses the filters and proceeds to synchronization. This exception is logged for audit purposes.
+   - If a request targets an allowlisted URL or domain (Section 5.2) and originates from a declared MISP instance, it bypasses the filters and is forwarded. This exception is logged for audit purposes.
 
 4. **Feed Ingestion Inspection**:  
    - The manifest and the events of a declared feed are inspected as described in Section 5.3.3 before reaching the MISP instance that fetches them. Both the entries removed from a manifest and the rejected events are logged for audit purposes.
@@ -629,7 +644,8 @@ MISP Guard functions as an intermediary proxy between MISP instances. HTTP traff
 
 - **Configuration Manager**
    - Reads and applies filtering rules from configuration files.
-   - Supports dynamic updates to rules without interrupting operations.
+   - Supports dynamic updates to rules without interrupting operations. The directory of the configuration file is watched, and a modified configuration is validated against the JSON schema and fully parsed before it replaces the one in use.
+   - An invalid configuration is rejected: at startup MISP Guard refuses to start, while running it logs the error and keeps enforcing the last valid configuration.
 
 ### 6.2. Mitmproxy Dependency
 
@@ -713,7 +729,9 @@ flowchart TD
     FKIND -- signature or cache --> FWD
 
     FEED -- no --> AL{Allowlisted<br/>url or domain?}
-    AL -- yes --> FWD
+    AL -- yes --> ASRC{Source is a<br/>declared instance?}
+    ASRC -- no --> BLOCK
+    ASRC -- yes --> FWD
     AL -- no --> COMP{Can reach<br/>compartment?}
     COMP -- no --> BLOCK
     COMP -- yes --> HOST{Destination host<br/>and port allowed?}
@@ -862,7 +880,7 @@ Together, these analyses provide confidence that MISP Guard's configuration, del
 
 ## 11. Evaluation Results
 
-The evaluation of MISP Guard against EAL 2 requirements confirmed compliance with the specified assurance measures. Key findings indicated that the system meets functional and security objectives, including effective filtering mechanisms, robust logging, and alignment with stated security policies. The evaluation verified satisfactory implementation of configuration management, secure delivery procedures, and development practices. No critical non-conformances were identified; however, minor recommendations were made to enhance documentation clarity and expand testing coverage in edge-case scenarios. Overall, MISP Guard demonstrated its readiness for deployment in environments requiring secure data synchronization between MISP instances.
+The evaluation of MISP Guard against EAL 2 requirements confirmed compliance with the specified assurance measures. Key findings indicated that the system meets functional and security objectives, including effective filtering mechanisms, robust logging, and alignment with stated security policies. The evaluation verified satisfactory implementation of configuration management, secure delivery procedures, and development practices. No critical non-conformances were identified; however, minor recommendations were made to enhance documentation clarity and expand testing coverage in edge-case scenarios. The features listed in Section 3.2 that are not provided by the TOE (alerts, fault recovery and deployment as a virtual appliance) have to be fulfilled by the environment of the deployment. Overall, MISP Guard demonstrated its readiness for deployment in environments requiring secure data synchronization between MISP instances.
 
 ## 12. Conclusion
 
@@ -889,9 +907,13 @@ sequenceDiagram
     MISP Guard->>MISP Internal: [GET]/servers/getVersion
     MISP Internal->>MISP Guard: [GET]/servers/getVersion
     MISP Guard->>MISP External: [GET]/servers/getVersion
+
+    MISP External->>MISP Guard: [POST]/events/filterEventIdsForPush
+    MISP Guard->>MISP Internal: [POST]/events/filterEventIdsForPush
+    MISP Internal->>MISP Guard: [POST]/events/filterEventIdsForPush
+    MISP Guard->>MISP External: [POST]/events/filterEventIdsForPush
     
     MISP External->>MISP Guard: [HEAD]/events/view/[UUID]
-    note right of MISP Guard: Only `minimal` search requests to /events/index are allowed
     MISP Guard->>MISP Internal: [HEAD]/events/view/[UUID]
     MISP Internal->>MISP Guard: [HEAD]/events/view/[UUID]
     MISP Guard->>MISP External: [HEAD]/events/view/[UUID]
@@ -1082,6 +1104,34 @@ sequenceDiagram
     MISP Guard->>MISP Internal: [POST]/users/resetauthkey/me
     end
 ```
+
+#### 14.1.5. Mediated Endpoints
+
+The diagrams above show the main exchanges. The complete set of endpoints mediated between MISP instances is listed below, every other request is rejected. The endpoints of the declared feeds are listed in Section 5.3.2.
+
+| Endpoint | Used by | Notes |
+|-|-|-|
+| `[GET]/servers/getVersion` | PUSH, PULL | Version negotiation. |
+| `[POST]/servers/postTest` | Connection test | |
+| `[GET]/users/view/me.json` | Connection test | Retrieves the synchronization user. |
+| `[GET]/servers/getAvailableSyncFilteringRules` | Synchronization setup | Retrieves the filtering rules available on the remote instance. |
+| `[POST]/events/index` | PULL | Only `minimal` and `published` searches are allowed. |
+| `[POST]/events/filterEventIdsForPush` | PUSH | |
+| `[HEAD]/events/view/[UUID]` | PUSH | |
+| `[POST]/events/add` | PUSH | The event is inspected. |
+| `[POST]/events/edit/[UUID]` | PUSH | The event is inspected. |
+| `[GET]/events/view/[UUID]` | PULL | The event is inspected. |
+| `[GET]/shadow_attributes/index` | PULL | The shadow attributes are inspected. |
+| `[POST]/galaxies/pushCluster` | PUSH | The galaxy cluster is inspected. |
+| `[POST]/galaxy_clusters/restSearch` | PULL | Only `minimal` and `published` searches are allowed. |
+| `[GET]/galaxy_clusters/view/[UUID]` | PULL | The galaxy cluster is inspected. |
+| `[POST]/sightings/bulkSaveSightings/[UUID]` | PUSH | |
+| `[POST]/sightings/restSearch/event` | PULL | |
+| `[POST]/analyst_data/filterAnalystDataForPush` | PUSH | |
+| `[POST]/analyst_data/pushAnalystData` | PUSH | The analyst data is inspected. |
+| `[POST]/analyst_data/indexMinimal` | PULL | |
+| `[GET]/analyst_data/index/[Note\|Opinion\|Relationship]/uuid[]:[UUID].json` | PULL | The analyst data is inspected. |
+| `[POST]/users/resetauthkey/me` | Credential renewal | Only if `allow_sync_auth_key_refresh` is enabled for the destination instance, see Section 5.4.1. |
 
 ### 14.2. Glossary and Acronyms
 

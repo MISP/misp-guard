@@ -803,6 +803,111 @@ class TestMispGuard:
         )
         assert flow.response.status_code == 403
 
+    def feed_event_with_object_flow(self, object_name: str, attribute_type: str):
+        """
+        Builds a feed event fetch flow, the event holds an object, an event
+        report and a note without distribution level, as in the feed exports.
+        """
+        feed_req = tutils.treq(
+            port=443,
+            host="feed1.com",
+            path="/doc/misp/feed-osint/1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a008.json",
+            method=b"GET",
+        )
+        feed_resp = tutils.tresp(
+            status_code=200,
+            headers=Headers(content_type="application/json"),
+            content=json.dumps(
+                {
+                    "Event": {
+                        "info": "OSINT - event with an object",
+                        "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a008",
+                        "Tag": [{"name": "tlp:clear"}],
+                        "Object": [
+                            {
+                                "name": object_name,
+                                "meta-category": "network",
+                                "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0c008",
+                                "Attribute": [
+                                    {
+                                        "category": "Network activity",
+                                        "type": attribute_type,
+                                        "value": "evil5.example.com",
+                                        "object_relation": "domain",
+                                        "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0b008",
+                                    }
+                                ],
+                            }
+                        ],
+                        "EventReport": [
+                            {
+                                "name": "report",
+                                "content": "report content",
+                                "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0d008",
+                            }
+                        ],
+                        "Note": [
+                            {
+                                "note": "note content",
+                                "uuid": "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0e008",
+                            }
+                        ],
+                    }
+                }
+            ).encode(),
+        )
+        flow = tflow.tflow(req=feed_req, resp=feed_resp)
+        flow.client_conn.peername = ("10.0.0.1", "22")
+
+        return flow
+
+    @pytest.mark.asyncio
+    async def test_feed_event_with_object_non_blocked(self, caplog):
+        """
+        Test that a feed event holding entities without distribution level is
+        passed through.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_event_with_object_flow("domain-ip", "domain")
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert "request blocked" not in caplog.text
+        assert flow.response.status_code == 200
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "object_name, attribute_type, expected_log",
+        [
+            ("person", "domain", "object with a blocked type: person"),
+            ("domain-ip", "email", "attribute with a blocked type: email"),
+        ],
+    )
+    async def test_feed_event_with_object_blocked(
+        self, object_name: str, attribute_type: str, expected_log: str, caplog
+    ):
+        """
+        Test that the rules are still checked on the feed event objects without
+        distribution level.
+        """
+        caplog.set_level("INFO")
+        mispguard = self.load_mispguard()
+
+        flow = self.feed_event_with_object_flow(object_name, attribute_type)
+        mispguard.request(flow)
+        mispguard.response(flow)
+
+        assert "MispGuard initialized" in caplog.text
+        assert (
+            "request blocked: [GET]/doc/misp/feed-osint/"
+            "1cc7bcb1-a0f0-4c2e-8c1c-b3e0b9f0a008.json - %s" % expected_log
+            in caplog.text
+        )
+        assert flow.response.status_code == 403
+
     @pytest.mark.asyncio
     async def test_feed_event_signature_passthrough(self, caplog):
         """

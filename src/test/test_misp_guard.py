@@ -228,6 +228,7 @@ class TestMispGuard:
         [
             "/sightings/bulkSaveSightings/5e168365-4391-44bd-851a-b48a14c30d77",
             "/sightings/restSearch/event",
+            "/sightings/filterSightingUuidsForPush/5e168365-4391-44bd-851a-b48a14c30d77",
         ],
     )
     async def test_sightings_are_blocked_if_not_enabled(self, path: str, caplog):

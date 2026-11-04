@@ -192,6 +192,11 @@ class MispGuard:
                 "methods": ["POST"],
                 "setting": "allow_sightings",
             },
+            {
+                "regex": r"^\/sightings\/filterSightingUuidsForPush\/[\w\-]{36}$",
+                "methods": ["POST"],
+                "setting": "allow_sightings",
+            },
         ]
 
     def configure(self, updated):
